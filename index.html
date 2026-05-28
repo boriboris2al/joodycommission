@@ -320,37 +320,75 @@
             return false;
         };
 
-        window.addEventListener('load', () => {
-            if (!window.supabaseClient) {
-                alert("🚨 에러: supabase-config.js 설정을 확인해주세요.");
-                return;
-            }
+window.addEventListener('load', () => {
+    if (!window.supabaseClient) {
+        alert("🚨 에러: supabase-config.js 설정을 확인해주세요.");
+        return;
+    }
 
-            if (typeof checkUser === 'function') checkUser();
-            if (typeof fetchCommissions === 'function') fetchCommissions();
+    // 1. 유저 로그인 상태 및 커미션 목록 초기 로드
+    if (typeof checkUser === 'function') checkUser();
+    if (typeof fetchCommissions === 'function') fetchCommissions();
 
-            // 상단 ➕ 클릭 인터페이스 초기화용 트리거 연동
-            const regBtn = document.getElementById('registerTabBtn');
-            if (regBtn) {
-                regBtn.addEventListener('click', () => {
-                    // 등록 모드 초기화 보장
-                    document.getElementById('editCommissionId').value = "";
-                    document.getElementById('regForm').reset();
-                    document.getElementById('regModalTitle').innerText = "내 커미션 등록";
-                    document.getElementById('regSubmitBtn').innerText = "등록 완료";
-                    document.getElementById('editImgNotice').classList.add('hidden');
-                    openRegisterModal();
-                });
-            }
+    // 2. 하단 ➕ 버튼 클릭 시 등록 폼 초기화 및 모달 오픈
+    const regBtn = document.getElementById('registerTabBtn');
+    if (regBtn) {
+        regBtn.addEventListener('click', (e) => {
+            e.preventDefault(); // 👈 혹시 모를 탭 버튼의 새로고침 현상 방지
+            document.getElementById('editCommissionId').value = "";
+            document.getElementById('regForm').reset();
+            document.getElementById('regModalTitle').innerText = "내 커미션 등록";
+            document.getElementById('regSubmitBtn').innerText = "등록 완료";
+            document.getElementById('editImgNotice').classList.add('hidden');
+            openRegisterModal();
+        });
+    }
 
-            const searchInput = document.getElementById('searchInput');
-            if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    currentSearch = e.target.value;
-                    if (typeof fetchCommissions === 'function') fetchCommissions();
-                });
+    // 3. 🔥 [초핵심] 로그인/회원가입 폼 제출 시 새로고침 원천 차단!!
+    const authForm = document.getElementById('authForm');
+    if (authForm) {
+        authForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // 브라우저 기습 새로고침 방지
+            if (typeof handleAuthSubmit === 'function') {
+                handleAuthSubmit(e);
+            } else {
+                alert("auth.js의 handleAuthSubmit 함수를 찾을 수 없습니다.");
             }
         });
+    }
+
+    // 4. 🔥 [초핵심] 커미션 등록/수정 폼 제출 시 새로고침 원천 차단!!
+    const regForm = document.getElementById('regForm');
+    if (regForm) {
+        regForm.addEventListener('submit', (e) => {
+            e.preventDefault(); // 브라우저 기습 새로고침 방지
+            if (typeof handleCreateCommission === 'function') {
+                handleCreateCommission(e);
+            } else {
+                alert("commission.js의 handleCreateCommission 함수를 찾을 수 없습니다.");
+            }
+        });
+    }
+
+    // 5. 후기 등록 폼 새로고침 방지
+    const reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (typeof handleCreateReview === 'function') handleCreateReview(e);
+        });
+    }
+
+    // 6. 검색창 인터랙션
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            if (typeof fetchCommissions === 'function') fetchCommissions();
+        });
+    }
+});
+
     </script>
 </body>
 </html>
