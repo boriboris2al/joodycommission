@@ -1,99 +1,68 @@
 // commission.js
+const supabase = window.supabaseClient;
 
 let currentFilter = '전체';
 let currentSearch = '';
-let currentTab = 'home'; // 'home' | 'bookmark'
 
+// 하단 탭의 ➕ 버튼 클릭 시 작동 (권한 차단 가드)
 function openRegisterModal() {
     if (!window.currentUserRole) {
-        alert("로그인이 필요한 서비스입니다!");
+        alert("로그인이 필요한 서비스입니다. 로그인 또는 회원가입을 먼저 해주세요!");
         openModal('authModal');
         return;
     }
     if (window.currentUserRole === 'applicant') {
-        alert("신청자 전용 계정은 커미션을 등록할 수 없습니다.");
+        alert("신청자 전용 계정은 커미션을 등록할 수 없습니다. 글을 쓰려면 '커미션주' 계정으로 가입해 주세요.");
         return;
     }
     openModal('regModal');
 }
 
-// 탭 전환
-function switchTab(tab) {
-    currentTab = tab;
-    const homeBtn = document.getElementById('tabHome');
-    const bookmarkBtn = document.getElementById('tabBookmark');
-    const searchBar = document.getElementById('searchBar');
-    const filterBar = document.getElementById('filterBar');
-
-    if (tab === 'home') {
-        homeBtn.className = "flex flex-col items-center text-pink-500 font-semibold text-xs";
-        bookmarkBtn.className = "flex flex-col items-center text-gray-400 text-xs hover:text-pink-400";
-        searchBar.style.display = '';
-        filterBar.style.display = '';
-        fetchCommissions();
-    } else {
-        homeBtn.className = "flex flex-col items-center text-gray-400 text-xs hover:text-pink-400";
-        bookmarkBtn.className = "flex flex-col items-center text-pink-500 font-semibold text-xs";
-        searchBar.style.display = 'none';
-        filterBar.style.display = 'none';
-        fetchBookmarks();
-    }
-}
-
-// 1. 커미션 목록 불러오기
+// 1. 메인 화면에 커미션 목록 띄우기
 async function fetchCommissions() {
     const listContainer = document.getElementById('commissionList');
     if (!listContainer) return;
-    listContainer.innerHTML = `<div class="text-center py-10 text-gray-300 text-sm">불러오는 중...</div>`;
-
+    
     try {
-        let query = getSupabase()
+        let query = supabase
             .from('commissions')
             .select(`id, title, price, slot_type, tags, image_url, is_closed, profiles ( username )`);
 
-        if (currentSearch.trim() !== '') query = query.ilike('title', `%${currentSearch}%`);
-        if (currentFilter !== '전체') query = query.contains('tags', [currentFilter]);
+        if (currentSearch.trim() !== '') {
+            query = query.ilike('title', `%${currentSearch}%`);
+        }
+
+        if (currentFilter !== '전체') {
+            query = query.contains('tags', [currentFilter]);
+        }
 
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
         if (data.length === 0) {
-            listContainer.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">조건에 맞는 커미션이 없습니다 ㅠㅠ</div>`;
+            listContainer.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">조건에 맞는 커미션이 없습니다. ㅠㅠ</div>`;
             return;
         }
 
-        // 북마크 목록 가져오기 (로그인한 경우만)
-        let bookmarkedIds = new Set();
-        if (window.currentUserId) {
-            const { data: bms } = await getSupabase()
-                .from('bookmarks').select('commission_id').eq('user_id', window.currentUserId);
-            if (bms) bms.forEach(b => bookmarkedIds.add(b.commission_id));
-        }
-
         listContainer.innerHTML = data.map(item => {
-            const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}개`;
-            const tagsHTML = item.tags.map(tag =>
-                `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`
-            ).join(' ');
+            const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}/5`);
+            const slotColor = item.is_closed ? 'bg-gray-200 text-gray-600' : 'bg-pink-50 text-pink-500';
+            const tagsHTML = item.tags.map(tag => `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`).join(' ');
             const sampleImg = item.image_url || 'https://via.placeholder.com/350x200?text=No+Image';
-            const isBookmarked = bookmarkedIds.has(item.id);
-            const isClosed = item.is_closed;
 
             return `
-                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer relative ${isClosed ? 'opacity-60' : ''}" onclick="openDetail(${item.id})">
-                    ${isClosed ? `<div class="absolute inset-0 bg-black/10 z-10 flex items-center justify-center rounded-2xl"><span class="bg-gray-800 text-white text-xs font-bold px-4 py-2 rounded-full">🔒 슬롯 마감</span></div>` : ''}
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer relative" onclick="openDetail(${item.id})">
+                    ${item.is_closed ? '<div class="absolute inset-0 bg-black/5 z-10 pointer-events-none"></div>' : ''}
                     <div class="h-44 bg-gray-100 relative">
                         <img src="${sampleImg}" alt="${item.title}" class="w-full h-full object-cover">
-                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">${item.price} 가치</span>
-                        <button onclick="event.stopPropagation(); toggleBookmark(${item.id}, ${isBookmarked})"
-                            class="absolute top-3 left-3 text-lg drop-shadow leading-none">
-                            ${isBookmarked ? '🔖' : '🤍'}
-                        </button>
+                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
+                            ${item.price} 가치
+                        </span>
                     </div>
                     <div class="p-3.5 space-y-1.5">
                         <div class="flex justify-between items-center">
                             <span class="text-xs text-gray-400 font-medium">✨ ${item.profiles?.username || '알 수 없음'}</span>
-                            <span class="text-[11px] font-semibold text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">${slotText}</span>
+                            <span class="text-[11px] font-semibold ${slotColor} px-2 py-0.5 rounded-full">${slotText}</span>
                         </div>
                         <h3 class="font-bold text-gray-900 text-sm line-clamp-1">${item.title}</h3>
                         <div class="flex flex-wrap gap-1 pt-1">${tagsHTML}</div>
@@ -107,90 +76,6 @@ async function fetchCommissions() {
     }
 }
 
-// 북마크 목록 불러오기
-async function fetchBookmarks() {
-    const listContainer = document.getElementById('commissionList');
-    if (!listContainer) return;
-
-    if (!window.currentUserId) {
-        listContainer.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">로그인 후 이용 가능합니다.</div>`;
-        return;
-    }
-
-    listContainer.innerHTML = `<div class="text-center py-10 text-gray-300 text-sm">불러오는 중...</div>`;
-
-    try {
-        const { data, error } = await getSupabase()
-            .from('bookmarks')
-            .select(`commission_id, commissions ( id, title, price, slot_type, tags, image_url, is_closed, profiles ( username ) )`)
-            .eq('user_id', window.currentUserId);
-        if (error) throw error;
-
-        const items = data.map(b => b.commissions).filter(Boolean);
-
-        if (items.length === 0) {
-            listContainer.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">북마크한 타입이 없습니다 🤍</div>`;
-            return;
-        }
-
-        listContainer.innerHTML = items.map(item => {
-            const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}개`;
-            const tagsHTML = item.tags.map(tag =>
-                `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`
-            ).join(' ');
-            const sampleImg = item.image_url || 'https://via.placeholder.com/350x200?text=No+Image';
-            const isClosed = item.is_closed;
-
-            return `
-                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer relative ${isClosed ? 'opacity-60' : ''}" onclick="openDetail(${item.id})">
-                    ${isClosed ? `<div class="absolute inset-0 bg-black/10 z-10 flex items-center justify-center rounded-2xl"><span class="bg-gray-800 text-white text-xs font-bold px-4 py-2 rounded-full">🔒 슬롯 마감</span></div>` : ''}
-                    <div class="h-44 bg-gray-100 relative">
-                        <img src="${sampleImg}" alt="${item.title}" class="w-full h-full object-cover">
-                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">${item.price} 가치</span>
-                        <button onclick="event.stopPropagation(); toggleBookmark(${item.id}, true)"
-                            class="absolute top-3 left-3 text-lg drop-shadow leading-none">🔖</button>
-                    </div>
-                    <div class="p-3.5 space-y-1.5">
-                        <div class="flex justify-between items-center">
-                            <span class="text-xs text-gray-400 font-medium">✨ ${item.profiles?.username || '알 수 없음'}</span>
-                            <span class="text-[11px] font-semibold text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">${slotText}</span>
-                        </div>
-                        <h3 class="font-bold text-gray-900 text-sm line-clamp-1">${item.title}</h3>
-                        <div class="flex flex-wrap gap-1 pt-1">${tagsHTML}</div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch (error) {
-        listContainer.innerHTML = `<div class="text-center py-10 text-red-400 text-sm">북마크 로드 실패 ㅠㅠ</div>`;
-    }
-}
-
-// 북마크 토글
-async function toggleBookmark(commissionId, isCurrentlyBookmarked) {
-    if (!window.currentUserId) {
-        alert("로그인 후 이용 가능합니다!");
-        openModal('authModal');
-        return;
-    }
-    try {
-        if (isCurrentlyBookmarked) {
-            await getSupabase().from('bookmarks')
-                .delete()
-                .eq('user_id', window.currentUserId)
-                .eq('commission_id', commissionId);
-        } else {
-            await getSupabase().from('bookmarks')
-                .insert([{ user_id: window.currentUserId, commission_id: commissionId }]);
-        }
-        // 현재 탭 새로고침
-        if (currentTab === 'home') fetchCommissions();
-        else fetchBookmarks();
-    } catch (err) {
-        alert("북마크 처리 실패: " + err.message);
-    }
-}
-
 function changeFilter(target, filterName) {
     const buttons = target.parentElement.querySelectorAll('button');
     buttons.forEach(btn => {
@@ -201,10 +86,10 @@ function changeFilter(target, filterName) {
     fetchCommissions();
 }
 
-// 2. 새 커미션 등록
+// 2. 새 커미션 등록 처리
 async function handleCreateCommission(e) {
     e.preventDefault();
-    const { data: { user } } = await getSupabase().auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user || window.currentUserRole === 'applicant') return alert("작성 권한이 없습니다.");
 
     const title = document.getElementById('commTitle').value;
@@ -213,15 +98,15 @@ async function handleCreateCommission(e) {
     const description = document.getElementById('commDesc').value;
     const item_wanted = document.getElementById('commItem').value;
     const credit_rule = document.getElementById('commCredit').value;
-    const custom_contact = document.getElementById('commContact').value;
+    const custom_contact = document.getElementById('commContact').value; 
     const imageFile = document.getElementById('commImage').files[0];
-
+    
     if (!custom_contact.trim()) return alert("신청 연락망을 입력해 주세요!");
 
     const tags = [];
-    ['tagSD','tagLD','tagFix','tagSemi','tagFree','tagDoodle','tagLine','tagColor','tagFull','tagHead','tagBust','tagHalf','tagBody'].forEach(id => {
+    ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody'].forEach(id => {
         const el = document.getElementById(id);
-        if (el && el.checked) tags.push(el.dataset.name);
+        if(el && el.checked) tags.push(el.dataset.name);
     });
 
     try {
@@ -229,20 +114,21 @@ async function handleCreateCommission(e) {
         if (imageFile) {
             const fileExt = imageFile.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await getSupabase().storage
-                .from('commission-samples').upload(fileName, imageFile);
+            const { error: uploadError } = await supabase.storage
+                .from('commission-samples')
+                .upload(fileName, imageFile);
+
             if (uploadError) throw uploadError;
-            const { data } = getSupabase().storage.from('commission-samples').getPublicUrl(fileName);
+
+            const { data } = supabase.storage.from('commission-samples').getPublicUrl(fileName);
             image_url = data.publicUrl;
         }
 
-        const { error } = await getSupabase().from('commissions').insert([{
-            user_id: user.id, title, price, slot_type, tags, description,
-            item_wanted, credit_rule, image_url, contact_info: custom_contact, is_closed: false
+        const { error } = await supabase.from('commissions').insert([{
+            user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, contact_info: custom_contact
         }]);
-        if (error) throw error;
 
-        await getSupabase().from('profiles').update({ contact_info: custom_contact }).eq('id', user.id);
+        if (error) throw error;
 
         alert("커미션이 성공적으로 등록되었습니다!");
         closeModal('regModal');
@@ -253,49 +139,47 @@ async function handleCreateCommission(e) {
     }
 }
 
-// 3. 상세 팝업창 열기
+// 3. 상세 팝업창 열기 (★오직 작성자 본인만 삭제 가능한 버튼 바인딩 추가)
 async function openDetail(id) {
     try {
-        const { data: item, error } = await getSupabase()
+        const { data: item, error } = await supabase
             .from('commissions')
-            .select(`*, profiles ( username, contact_info )`)
+            .select(`*, profiles ( username )`)
             .eq('id', id)
             .single();
+
         if (error) throw error;
 
         document.getElementById('detailImg').src = item.image_url || 'https://via.placeholder.com/350x200?text=No+Image';
         document.getElementById('detailPrice').innerText = `${item.price} 가치`;
         document.getElementById('detailTitle').innerText = item.title;
         document.getElementById('detailArtist').innerText = `✨ 작가: ${item.profiles?.username || '알 수 없음'}`;
-
-        const slotEl = document.getElementById('detailSlot');
-        if (item.is_closed) {
-            slotEl.innerText = '🔒 슬롯 마감';
-            slotEl.className = 'font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full text-xs';
-        } else {
-            slotEl.innerText = item.slot_type === 'always' ? '상시 운영' : `슬롯 ${item.slot_type}개`;
-            slotEl.className = 'font-bold text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full text-xs';
-        }
-
-        document.getElementById('detailItem').innerText = item.item_wanted || '없음 (아무거나 가능)';
+        document.getElementById('detailSlot').innerText = item.is_closed ? '슬롯 마감됨' : (item.slot_type === 'always' ? '상시 운영' : `남은 슬롯: ${item.slot_type}/5개`);
+        document.getElementById('detailItem').innerText = item.item_wanted || '없음';
         document.getElementById('detailCredit').innerText = item.credit_rule || '자유롭게 표기 가능';
         document.getElementById('detailDesc').innerText = item.description || '상세 설명이 없습니다.';
+        
+        // 🔒 오직 등록한 주인에게만 삭제 버튼 노출 가드
+        const deleteBtn = document.getElementById('detailDeleteBtn');
+        if (window.currentUserId && window.currentUserId === item.user_id) {
+            deleteBtn.classList.remove('hidden');
+            deleteBtn.onclick = () => handleDeleteCommission(item.id, item.title);
+        } else {
+            deleteBtn.classList.add('hidden');
+        }
 
         const contactBtn = document.getElementById('detailContactBtn');
-        const contactInfo = item.contact_info || item.profiles?.contact_info || '';
-
-        if (item.is_closed) {
-            contactBtn.innerText = "🔒 현재 슬롯이 마감되었습니다";
-            contactBtn.onclick = null;
-            contactBtn.className = "w-full bg-gray-300 text-gray-500 p-3 rounded-xl font-bold text-sm cursor-not-allowed";
-        } else if (contactInfo.startsWith('http')) {
+        const contactInfo = item.contact_info || ''; 
+        
+        if (contactInfo.startsWith('http')) {
             contactBtn.innerText = "💬 오픈채팅으로 신청하기";
             contactBtn.onclick = () => window.open(contactInfo, '_blank');
-            contactBtn.className = "w-full bg-pink-500 text-white p-3 rounded-xl font-bold text-sm shadow-md hover:bg-pink-600 transition-colors";
         } else {
             contactBtn.innerText = `🎮 연락처: ${contactInfo} (복사하기)`;
-            contactBtn.onclick = () => { navigator.clipboard.writeText(contactInfo); alert('복사되었습니다!'); };
-            contactBtn.className = "w-full bg-pink-500 text-white p-3 rounded-xl font-bold text-sm shadow-md hover:bg-pink-600 transition-colors";
+            contactBtn.onclick = () => {
+                navigator.clipboard.writeText(contactInfo);
+                alert('연락처가 복사되었습니다!');
+            };
         }
 
         document.getElementById('targetCommissionId').value = id;
@@ -306,21 +190,43 @@ async function openDetail(id) {
     }
 }
 
+// 🔥 이번 고도화의 꽃: 진짜 본인 글인지 데이터베이스 단에서 검증하고 삭제하는 함수
+async function handleDeleteCommission(id, title) {
+    if (!confirm(`🚨정말 [ ${title} ] 타입을 삭제하시겠습니까?\n삭제된 데이터와 후기는 복구할 수 없습니다.`)) return;
+
+    try {
+        const { error } = await supabase
+            .from('commissions')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', window.currentUserId); // 내 세션 ID와 일치하는 데이터만 조준 사격 (보안)
+
+        if (error) throw error;
+
+        alert("커미션 타입이 삭제되었습니다!");
+        closeModal('detailModal');
+        fetchCommissions(); // 메인 피드 목록 새로고침
+    } catch (e) {
+        alert("삭제 실패: " + e.message);
+    }
+}
+
 // 4. 후기 목록 조회
 async function fetchReviews(commissionId) {
     const reviewListContainer = document.getElementById('reviewList');
     reviewListContainer.innerHTML = "<p class='text-xs text-gray-400'>후기 로딩 중...</p>";
 
     try {
-        const { data: reviews, error } = await getSupabase()
+        const { data: reviews, error } = await supabase
             .from('reviews')
             .select(`content, rating, profiles ( username )`)
             .eq('commission_id', commissionId)
             .order('created_at', { ascending: false });
+
         if (error) throw error;
 
         if (reviews.length === 0) {
-            reviewListContainer.innerHTML = "<p class='text-xs text-gray-400 py-2'>아직 작성된 후기가 없습니다. 첫 후기를 남겨보세요!</p>";
+            reviewListContainer.innerHTML = "<p class='text-xs text-gray-400 py-2'>아직 작성된 후기가 없습니다.</p>";
             return;
         }
 
@@ -334,14 +240,14 @@ async function fetchReviews(commissionId) {
             </div>
         `).join('');
     } catch (error) {
-        reviewListContainer.innerHTML = "<p class='text-xs text-red-400'>후기를 불러오지 못했습니다.</p>";
+        reviewListContainer.innerHTML = "<p class='text-xs text-red-400'>후기 로드 실패</p>";
     }
 }
 
-// 5. 후기 등록
+// 5. 한줄 후기 등록
 async function handleCreateReview(e) {
     e.preventDefault();
-    const { data: { user } } = await getSupabase().auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return alert("로그인 후 이용 가능합니다.");
 
     const commissionId = document.getElementById('targetCommissionId').value;
@@ -349,11 +255,16 @@ async function handleCreateReview(e) {
     const content = document.getElementById('reviewContent').value;
 
     try {
-        const { error } = await getSupabase().from('reviews').insert([{
-            commission_id: commissionId, writer_id: user.id, rating, content
+        const { error } = await supabase.from('reviews').insert([{
+            commission_id: commissionId,
+            writer_id: user.id,
+            rating: rating,
+            content: content
         }]);
+
         if (error) throw error;
-        alert('후기가 등록되었습니다!');
+
+        alert('후기가 등록되었습니다! 🎉');
         document.getElementById('reviewContent').value = '';
         fetchReviews(commissionId);
     } catch (error) {
