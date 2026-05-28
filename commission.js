@@ -4,7 +4,7 @@ const supabase = window.supabaseClient;
 let currentFilter = '전체';
 let currentSearch = '';
 
-// 하단 탭의 ➕ 버튼 클릭 시 작동 (권한 차단 가드)
+// 하단 탭의 ➕ 버튼 클릭 시 작동
 function openRegisterModal() {
     if (!window.currentUserRole) {
         alert("로그인이 필요한 서비스입니다. 로그인 또는 회원가입을 먼저 해주세요!");
@@ -48,16 +48,12 @@ async function fetchCommissions() {
             const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}/5`);
             const slotColor = item.is_closed ? 'bg-gray-200 text-gray-600' : 'bg-pink-50 text-pink-500';
             const tagsHTML = item.tags.map(tag => `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`).join(' ');
-            const sampleImg = item.image_url || 'https://via.placeholder.com/350x200?text=No+Image';
-
             return `
                 <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer relative" onclick="openDetail(${item.id})">
                     ${item.is_closed ? '<div class="absolute inset-0 bg-black/5 z-10 pointer-events-none"></div>' : ''}
                     <div class="h-44 bg-gray-100 relative">
-                        <img src="${sampleImg}" alt="${item.title}" class="w-full h-full object-cover">
-                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
-                            ${item.price} 가치
-                        </span>
+                        <img src="${item.image_url || 'https://via.placeholder.com/350x200?text=No+Image'}" class="w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">${item.price} 가치</span>
                     </div>
                     <div class="p-3.5 space-y-1.5">
                         <div class="flex justify-between items-center">
@@ -67,11 +63,9 @@ async function fetchCommissions() {
                         <h3 class="font-bold text-gray-900 text-sm line-clamp-1">${item.title}</h3>
                         <div class="flex flex-wrap gap-1 pt-1">${tagsHTML}</div>
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join('');
     } catch (error) {
-        console.error(error);
         listContainer.innerHTML = `<div class="text-center py-10 text-red-400 text-sm">데이터 로드 실패 ㅠㅠ</div>`;
     }
 }
@@ -114,40 +108,27 @@ async function handleCreateCommission(e) {
         if (imageFile) {
             const fileExt = imageFile.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage
-                .from('commission-samples')
-                .upload(fileName, imageFile);
-
+            const { error: uploadError } = await supabase.storage.from('commission-samples').upload(fileName, imageFile);
             if (uploadError) throw uploadError;
-
-            const { data } = supabase.storage.from('commission-samples').getPublicUrl(fileName);
-            image_url = data.publicUrl;
+            image_url = supabase.storage.from('commission-samples').getPublicUrl(fileName).data.publicUrl;
         }
 
         const { error } = await supabase.from('commissions').insert([{
-            user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, contact_info: custom_contact
+            user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, contact_info: custom_contact, image_url
         }]);
-
         if (error) throw error;
 
         alert("커미션이 성공적으로 등록되었습니다!");
         closeModal('regModal');
         document.getElementById('regForm').reset();
         fetchCommissions();
-    } catch (error) {
-        alert("등록 실패: " + error.message);
-    }
+    } catch (error) { alert("등록 실패: " + error.message); }
 }
 
-// 3. 상세 팝업창 열기 (★오직 작성자 본인만 삭제 가능한 버튼 바인딩 추가)
+// 3. 상세 팝업창 열기 (북마크 유무 실시간 파악 추가)
 async function openDetail(id) {
     try {
-        const { data: item, error } = await supabase
-            .from('commissions')
-            .select(`*, profiles ( username )`)
-            .eq('id', id)
-            .single();
-
+        const { data: item, error } = await supabase.from('commissions').select(`*, profiles ( username )`).eq('id', id).single();
         if (error) throw error;
 
         document.getElementById('detailImg').src = item.image_url || 'https://via.placeholder.com/350x200?text=No+Image';
@@ -159,77 +140,131 @@ async function openDetail(id) {
         document.getElementById('detailCredit').innerText = item.credit_rule || '자유롭게 표기 가능';
         document.getElementById('detailDesc').innerText = item.description || '상세 설명이 없습니다.';
         
-        // 🔒 오직 등록한 주인에게만 삭제 버튼 노출 가드
+        // 🔒 삭제 버튼 제어
         const deleteBtn = document.getElementById('detailDeleteBtn');
         if (window.currentUserId && window.currentUserId === item.user_id) {
             deleteBtn.classList.remove('hidden');
             deleteBtn.onclick = () => handleDeleteCommission(item.id, item.title);
+        } else { deleteBtn.classList.add('hidden'); }
+
+        // 🔖 북마크 버튼 초기 상태 체크 및 클릭 이벤트 매핑
+        const bookmarkBtn = document.getElementById('detailBookmarkBtn');
+        if (window.currentUserId) {
+            const { data: isBookmarked } = await supabase.from('bookmarks').select('id').eq('user_id', window.currentUserId).eq('commission_id', id).maybeSingle();
+            if (isBookmarked) {
+                bookmarkBtn.className = "bg-amber-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-xs border border-amber-500";
+                bookmarkBtn.innerText = "💛 북마크 취소";
+                bookmarkBtn.onclick = () => toggleBookmark(id, true);
+            } else {
+                bookmarkBtn.className = "bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-xs font-bold shadow-xs border border-amber-200 hover:bg-amber-100";
+                bookmarkBtn.innerText = "🤍 북마크";
+                bookmarkBtn.onclick = () => toggleBookmark(id, false);
+            }
         } else {
-            deleteBtn.classList.add('hidden');
+            bookmarkBtn.onclick = () => { alert('로그인 후 북마크 등록이 가능합니다!'); openModal('authModal'); };
         }
 
         const contactBtn = document.getElementById('detailContactBtn');
         const contactInfo = item.contact_info || ''; 
-        
         if (contactInfo.startsWith('http')) {
             contactBtn.innerText = "💬 오픈채팅으로 신청하기";
             contactBtn.onclick = () => window.open(contactInfo, '_blank');
         } else {
             contactBtn.innerText = `🎮 연락처: ${contactInfo} (복사하기)`;
-            contactBtn.onclick = () => {
-                navigator.clipboard.writeText(contactInfo);
-                alert('연락처가 복사되었습니다!');
-            };
+            contactBtn.onclick = () => { navigator.clipboard.writeText(contactInfo); alert('복사되었습니다!'); };
         }
 
         document.getElementById('targetCommissionId').value = id;
         fetchReviews(id);
         openModal('detailModal');
-    } catch (error) {
-        alert('상세 정보를 불러오지 못했습니다: ' + error.message);
-    }
+    } catch (error) { alert('상세 정보를 불러오지 못했습니다: ' + error.message); }
 }
 
-// 🔥 이번 고도화의 꽃: 진짜 본인 글인지 데이터베이스 단에서 검증하고 삭제하는 함수
+// 🌟 4. 북마크 추가/삭제 토글 연산 함수
+async function toggleBookmark(commissionId, isDeleteAction) {
+    if (!window.currentUserId) return alert("로그인이 필요한 기능입니다.");
+    try {
+        if (isDeleteAction) {
+            const { error } = await supabase.from('bookmarks').delete().eq('user_id', window.currentUserId).eq('commission_id', commissionId);
+            if (error) throw error;
+        } else {
+            const { error } = await supabase.from('bookmarks').insert([{ user_id: window.currentUserId, commission_id: commissionId }]);
+            if (error) throw error;
+        }
+        openDetail(commissionId); // 팝업 새로고침하여 상태 변경
+    } catch (e) { alert("북마크 연산 실패: " + e.message); }
+}
+
+// 🌟 5. 하단 탭 [북마크] 전용 조회 함수 추가
+async function fetchBookmarks() {
+    const listContainer = document.getElementById('bookmarkList');
+    if (!listContainer) return;
+    if (!window.currentUserId) {
+        listContainer.innerHTML = `<div class="text-center py-14 text-gray-400 text-sm">로그인 후 북마크를 확인하실 수 있습니다. ㅠㅠ</div>`;
+        return;
+    }
+    try {
+        // 내 ID가 찜한 북마크 리스트에서 커미션 상세 정보를 조인해서 가져오기
+        const { data, error } = await supabase
+            .from('bookmarks')
+            .select(`commission_id, commissions ( id, title, price, slot_type, tags, image_url, is_closed, profiles ( username ) )`)
+            .eq('user_id', window.currentUserId);
+            
+        if (error) throw error;
+        if (!data || data.length === 0) {
+            listContainer.innerHTML = `<div class="text-center py-14 text-gray-400 text-sm">아직 북마크(찜)한 타입이 없습니다. 🤍</div>`;
+            return;
+        }
+
+        listContainer.innerHTML = data.map(bookmark => {
+            const item = bookmark.commissions;
+            if (!item) return ''; // 글 자체가 삭제된 예외 처리
+            const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}/5`);
+            const slotColor = item.is_closed ? 'bg-gray-200 text-gray-600' : 'bg-pink-50 text-pink-500';
+            const tagsHTML = item.tags.map(tag => `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`).join(' ');
+            return `
+                <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer relative" onclick="openDetail(${item.id})">
+                    ${item.is_closed ? '<div class="absolute inset-0 bg-black/5 z-10 pointer-events-none"></div>' : ''}
+                    <div class="h-44 bg-gray-100 relative">
+                        <img src="${item.image_url || 'https://via.placeholder.com/350x200?text=No+Image'}" class="w-full h-full object-cover">
+                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">${item.price} 가치</span>
+                    </div>
+                    <div class="p-3.5 space-y-1.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-400 font-medium">✨ ${item.profiles?.username || '알 수 없음'}</span>
+                            <span class="text-[11px] font-semibold ${slotColor} px-2 py-0.5 rounded-full">${slotText}</span>
+                        </div>
+                        <h3 class="font-bold text-gray-900 text-sm line-clamp-1">${item.title}</h3>
+                        <div class="flex flex-wrap gap-1 pt-1">${tagsHTML}</div>
+                    </div>
+                </div>`;
+        }).join('');
+    } catch (e) { listContainer.innerHTML = `<div class="text-center py-10 text-red-400 text-sm">북마크 로드 실패 ㅠㅠ</div>`; }
+}
+
+// 6. 커미션 글 삭제 처리
 async function handleDeleteCommission(id, title) {
     if (!confirm(`🚨정말 [ ${title} ] 타입을 삭제하시겠습니까?\n삭제된 데이터와 후기는 복구할 수 없습니다.`)) return;
-
     try {
-        const { error } = await supabase
-            .from('commissions')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', window.currentUserId); // 내 세션 ID와 일치하는 데이터만 조준 사격 (보안)
-
+        const { error } = await supabase.from('commissions').delete().eq('id', id).eq('user_id', window.currentUserId);
         if (error) throw error;
-
-        alert("커미션 타입이 삭제되었습니다!");
+        alert("커미션 타입이 깔끔하게 삭제되었습니다!");
         closeModal('detailModal');
-        fetchCommissions(); // 메인 피드 목록 새로고침
-    } catch (e) {
-        alert("삭제 실패: " + e.message);
-    }
+        fetchCommissions();
+    } catch (e) { alert("삭제 실패: " + e.message); }
 }
 
-// 4. 후기 목록 조회
+// 7. 후기 목록 조회
 async function fetchReviews(commissionId) {
     const reviewListContainer = document.getElementById('reviewList');
     reviewListContainer.innerHTML = "<p class='text-xs text-gray-400'>후기 로딩 중...</p>";
-
     try {
-        const { data: reviews, error } = await supabase
-            .from('reviews')
-            .select(`content, rating, profiles ( username )`)
-            .eq('commission_id', commissionId)
-            .order('created_at', { ascending: false });
-
+        const { data: reviews, error } = await supabase.from('reviews').select(`content, rating, profiles ( username )`).eq('commission_id', commissionId).order('created_at', { ascending: false });
         if (error) throw error;
-
         if (reviews.length === 0) {
             reviewListContainer.innerHTML = "<p class='text-xs text-gray-400 py-2'>아직 작성된 후기가 없습니다.</p>";
             return;
         }
-
         reviewListContainer.innerHTML = reviews.map(rev => `
             <div class="bg-gray-50 p-2.5 rounded-xl text-xs space-y-1">
                 <div class="flex justify-between items-center">
@@ -237,14 +272,11 @@ async function fetchReviews(commissionId) {
                     <span class="text-amber-400 font-bold">${'⭐'.repeat(rev.rating)}</span>
                 </div>
                 <p class="text-gray-600">${rev.content}</p>
-            </div>
-        `).join('');
-    } catch (error) {
-        reviewListContainer.innerHTML = "<p class='text-xs text-red-400'>후기 로드 실패</p>";
-    }
+            </div>`).join('');
+    } catch (error) { reviewListContainer.innerHTML = "<p class='text-xs text-red-400'>후기 로드 실패</p>"; }
 }
 
-// 5. 한줄 후기 등록
+// 8. 한줄 후기 등록
 async function handleCreateReview(e) {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
@@ -255,19 +287,10 @@ async function handleCreateReview(e) {
     const content = document.getElementById('reviewContent').value;
 
     try {
-        const { error } = await supabase.from('reviews').insert([{
-            commission_id: commissionId,
-            writer_id: user.id,
-            rating: rating,
-            content: content
-        }]);
-
+        const { error } = await supabase.from('reviews').insert([{ commission_id: commissionId, writer_id: user.id, rating: rating, content: content }]);
         if (error) throw error;
-
         alert('후기가 등록되었습니다! 🎉');
         document.getElementById('reviewContent').value = '';
         fetchReviews(commissionId);
-    } catch (error) {
-        alert('후기 등록 실패: ' + error.message);
-    }
+    } catch (error) { alert('후기 등록 실패: ' + error.message); }
 }
