@@ -30,16 +30,6 @@ async function checkUser() {
                 window.currentUserRole = profile.role || 'commissioner'; // 기본값 설정
                 window.currentUserId = user.id;
                 window.currentUsername = profile.username;
-            } else {
-                // ⚠️ profiles 테이블에 정보가 누락된 경우 (프로필 미설정 방지용 자동 복구)
-                // 메타데이터나 헥사 변환 전 원본 값을 역추적할 수 없으므로, 임시방편으로 '주디유저'로 세팅하거나 
-                // 글쓰기가 가능하도록 기본 권한을 강제로 부여합니다.
-                console.warn("Profiles 테이블에서 유저 정보를 찾지 못했습니다. 자동 복구 모드 진입.");
-                
-                loginBtn.innerText = "👤 프로필 복구됨";
-                window.currentUserRole = 'both'; // 글 등록이 가능하도록 권한 강제 부여
-                window.currentUserId = user.id;
-                window.currentUsername = "주디유저";
             }
 
             // 프로필 버튼 클릭 → 계정 메뉴 팝업 열기
