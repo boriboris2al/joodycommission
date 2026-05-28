@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>주디 커미션 중개소</title>
-    <!-- Tailwind CSS & Supabase SDK CDN 불러오기 -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -24,12 +23,10 @@
 
     <!-- 메인 목록 -->
     <main class="flex-1 p-4 pb-20">
-        <!-- 검색창 -->
         <div class="mb-4">
             <input type="text" id="searchInput" placeholder="타입 이름으로 검색..." class="w-full p-3 rounded-2xl bg-white border border-gray-200 text-sm shadow-sm focus:outline-none focus:border-pink-300">
         </div>
 
-        <!-- 카테고리 필터 스크롤바 -->
         <div class="flex gap-2 overflow-x-auto pb-3 scrollbar-none text-xs">
             <button onclick="changeFilter(this, '전체')" class="bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition">전체</button>
             <button onclick="changeFilter(this, 'SD')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">SD</button>
@@ -40,17 +37,16 @@
             <button onclick="changeFilter(this, '풀채색')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">풀채색</button>
         </div>
 
-        <!-- 커미션 카드 그리드 리스트 -->
         <div id="commissionList" class="grid grid-cols-1 gap-4"></div>
     </main>
 
-    <!-- 하단 탭 바 (권한 검사 함수인 openRegisterModal() 연결) -->
+    <!-- 🔴 수정: onclick 제거하고 id만 부여 → DOMContentLoaded에서 이벤트 연결 -->
     <nav class="fixed bottom-0 left-0 right-0 max-w-[420px] mx-auto bg-white border-t border-gray-100 p-2 flex justify-around items-center z-50">
         <button class="flex flex-col items-center text-pink-500 font-semibold text-xs" onclick="location.reload()">🏠<span class="mt-0.5">홈</span></button>
-        <button class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400" onclick="openRegisterModal()">➕<span class="mt-0.5">등록</span></button>
+        <button id="registerTabBtn" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400">➕<span class="mt-0.5">등록</span></button>
     </nav>
 
-    <!-- 🔐 1. 로그인/회원가입 모달 -->
+    <!-- 1. 로그인/회원가입 모달 -->
     <div id="authModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 relative shadow-xl">
             <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -75,7 +71,7 @@
         </div>
     </div>
 
-    <!-- ✍️ 2. 커미션 등록 모달 -->
+    <!-- 2. 커미션 등록 모달 -->
     <div id="regModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 max-h-[85vh] overflow-y-auto relative shadow-xl">
             <button onclick="closeModal('regModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -94,7 +90,7 @@
                             <option value="5">슬롯 5개</option>
                         </select>
                     </div>
-                    
+
                     <div class="p-3 bg-gray-50 rounded-xl space-y-2">
                         <p class="text-xs font-semibold text-gray-500">세부 분류 태그 선택</p>
                         <div class="grid grid-cols-3 gap-2 text-xs text-gray-600">
@@ -116,11 +112,8 @@
 
                     <input type="text" id="commItem" placeholder="💎 받는 아이템 란 (상세 기재)" class="w-full p-3 rounded-xl border border-gray-200">
                     <input type="text" id="commCredit" placeholder="📌 출처 표기 방식 (한줄란)" class="w-full p-3 rounded-xl border border-gray-200">
-                    
-                    <!-- 신청 연락망 기재란 -->
                     <input type="text" id="commContact" placeholder="💬 신청 연락망 (예: 오픈채팅 링크 또는 인게임닉으로 연락)" class="w-full p-3 rounded-xl border border-pink-300" required>
-                    
-                    <textarea id="commDesc" placeholder="타입에 대한 세부 설명 작성을 작성해주세요." rows="4" class="w-full p-3 rounded-xl border border-gray-200"></textarea>
+                    <textarea id="commDesc" placeholder="타입에 대한 세부 설명을 작성해주세요." rows="4" class="w-full p-3 rounded-xl border border-gray-200"></textarea>
                     <div>
                         <label class="text-xs font-semibold text-gray-500 block mb-1">샘플 이미지 업로드</label>
                         <input type="file" id="commImage" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100" required>
@@ -131,7 +124,7 @@
         </div>
     </div>
 
-    <!-- 🔍 3. 커미션 상세 페이지 모달 -->
+    <!-- 3. 커미션 상세 페이지 모달 -->
     <div id="detailModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 max-h-[90vh] overflow-y-auto relative shadow-2xl">
             <button onclick="closeModal('detailModal')" class="absolute top-4 right-4 text-gray-400 text-xl z-10 bg-white/80 w-8 h-8 rounded-full flex items-center justify-center">✕</button>
@@ -182,41 +175,35 @@
         </div>
     </div>
 
-    <!-- 📦 외부로 분리한 파일들 주입 (순서가 매우 중요합니다!) -->
     <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
     <script src="commission.js"></script>
 
-    <!-- 메인페이지 화면 제어용 스크립트 -->
     <script>
-        // 전역 모달 열기/닫기 함수
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // 전역 에러 트래킹 치트키 (어디서 터졌는지 팝업으로 명확히 짚어줌)
         window.onerror = function(message, source, lineno) {
             alert("⚠️ 자바스크립트 에러 발생!\n내용: " + message + "\n파일 위치: " + source + " (" + lineno + "번째 줄)");
             return false;
         };
 
-        // 앱 로드 시점 진입점
         document.addEventListener('DOMContentLoaded', () => {
-            // 1단계: Supabase 전역 객체 로드 검사
             if (!window.supabaseClient) {
                 alert("🚨 에러: supabase-config.js 파일이 없거나 키 설정이 올바르지 않습니다.");
                 return;
             }
 
-            // 2단계: 유저 정보 조회 및 리스트 바인딩
             checkUser();
             fetchCommissions();
-            
-            // 3단계: 폼 이벤트 가로채기 설정
+
+            // 🔴 수정: 하단 등록 버튼을 여기서 이벤트 바인딩 (함수가 로드된 뒤 실행 보장)
+            document.getElementById('registerTabBtn').addEventListener('click', () => openRegisterModal());
+
             document.getElementById('authForm').addEventListener('submit', (e) => handleAuth(e));
             document.getElementById('regForm').addEventListener('submit', (e) => handleCreateCommission(e));
             document.getElementById('reviewForm').addEventListener('submit', (e) => handleCreateReview(e));
-            
-            // 4단계: 검색 인풋 이벤트 연결
+
             document.getElementById('searchInput').addEventListener('input', (e) => {
                 currentSearch = e.target.value;
                 fetchCommissions();
