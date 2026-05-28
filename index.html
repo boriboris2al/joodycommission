@@ -184,10 +184,21 @@
     <script src="commission.js"></script>
 
     <script>
+        // 에러 추적용 치트키 (어디서 터졌는지 팝업으로 알려줌)
+        window.onerror = function(message, source, lineno, colno, error) {
+            alert("⚠️ 에러 발생!: " + message + "\n위치: " + source + " (" + lineno + "줄)");
+            return false;
+        };
+
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Supabase 초기화가 정상인지 먼저 체크
+            if (!window.supabaseClient) {
+                alert("🚨 Supabase가 정상적으로 초기화되지 않았습니다! config 파일을 확인해주세요.");
+                return;
+            }
             checkUser();
             fetchCommissions();
             
