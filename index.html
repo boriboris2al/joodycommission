@@ -40,23 +40,24 @@
         <div id="commissionList" class="grid grid-cols-1 gap-4"></div>
     </main>
 
-    <!-- 🔴 수정: onclick 제거하고 id만 부여 → DOMContentLoaded에서 이벤트 연결 -->
     <nav class="fixed bottom-0 left-0 right-0 max-w-[420px] mx-auto bg-white border-t border-gray-100 p-2 flex justify-around items-center z-50">
         <button class="flex flex-col items-center text-pink-500 font-semibold text-xs" onclick="location.reload()">🏠<span class="mt-0.5">홈</span></button>
         <button id="registerTabBtn" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400">➕<span class="mt-0.5">등록</span></button>
     </nav>
 
-    <!-- 1. 로그인/회원가입 모달 -->
+    <!-- 1. 로그인/회원가입 모달 (닉네임+비밀번호만) -->
     <div id="authModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 relative shadow-xl">
             <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
-            <h2 class="text-lg font-bold text-gray-900">주디 커미션 시작하기</h2>
+            <h2 id="authModalTitle" class="text-lg font-bold text-gray-900">로그인</h2>
             <form id="authForm">
                 <div class="space-y-3 text-sm">
-                    <input type="email" id="authEmail" placeholder="이메일 주소" class="w-full p-3 rounded-xl border border-gray-200" required>
+                    <!-- 닉네임 (로그인/가입 공통) -->
+                    <input type="text" id="authUsername" placeholder="주디 인게임 닉네임" class="w-full p-3 rounded-xl border border-gray-200" required>
+                    <!-- 비밀번호 (로그인/가입 공통) -->
                     <input type="password" id="authPassword" placeholder="비밀번호" class="w-full p-3 rounded-xl border border-gray-200" required>
-                    <div id="authUsernameContainer" class="hidden space-y-3">
-                        <input type="text" id="authUsername" placeholder="주디 인게임 닉네임" class="w-full p-3 rounded-xl border border-gray-200">
+                    <!-- 회원가입 전용 추가 입력란 (기본 숨김) -->
+                    <div id="authExtraContainer" class="hidden space-y-3">
                         <input type="text" id="authContact" placeholder="기본 연락처 (예: 오픈채팅 링크 등)" class="w-full p-3 rounded-xl border border-gray-200">
                         <select id="authRole" class="w-full p-3 rounded-xl border border-gray-200 bg-white">
                             <option value="commissioner">커미션주 (글 등록 가능)</option>
@@ -67,7 +68,7 @@
                     <button type="submit" id="authSubmitBtn" class="w-full bg-pink-500 text-white p-3 rounded-xl font-bold mt-2">로그인하기</button>
                 </div>
             </form>
-            <p id="authToggleText" onclick="toggleAuthMode()" class="text-center text-xs text-gray-400 underline cursor-pointer">처음이신가요? 인게임 닉네임으로 가입하기</p>
+            <p id="authToggleText" onclick="toggleAuthMode()" class="text-center text-xs text-gray-400 underline cursor-pointer">처음이신가요? 회원가입</p>
         </div>
     </div>
 
@@ -197,9 +198,7 @@
             checkUser();
             fetchCommissions();
 
-            // 🔴 수정: 하단 등록 버튼을 여기서 이벤트 바인딩 (함수가 로드된 뒤 실행 보장)
             document.getElementById('registerTabBtn').addEventListener('click', () => openRegisterModal());
-
             document.getElementById('authForm').addEventListener('submit', (e) => handleAuth(e));
             document.getElementById('regForm').addEventListener('submit', (e) => handleCreateCommission(e));
             document.getElementById('reviewForm').addEventListener('submit', (e) => handleCreateReview(e));
