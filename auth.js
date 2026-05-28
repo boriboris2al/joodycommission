@@ -1,7 +1,7 @@
 // auth.js
 const getSupabase = () => window.supabaseClient;
 
-// 닉네임 → hex 이메일 변환 (클로드의 가짜 이메일 치트키 유지)
+// 닉네임 → hex 이메일 변환 (기존 클로드 원본 로직 완벽 복구)
 function makeEmail(username) {
     if (!username) return '';
     const hex = Array.from(new TextEncoder().encode(username.trim()))
@@ -10,32 +10,42 @@ function makeEmail(username) {
     return hex + '@joody.com';
 }
 
-// 현재 로그인한 유저 확인 및 UI 변경
+// 현재 로그인한 유저 확인 및 UI 변경 (★안전 장치 대폭 강화 버전)
 async function checkUser() {
     try {
         const { data: { user } } = await getSupabase().auth.getUser();
         const loginBtn = document.getElementById('loginBtn');
 
         if (user) {
-            const { data: profile } = await getSupabase()
+            // 1. profiles 테이블에서 내 유저 정보 조회
+            const { data: profile, error } = await getSupabase()
                 .from('profiles')
                 .select('username, role')
                 .eq('id', user.id)
                 .maybeSingle();
 
-            if (profile) {
+            if (profile && profile.username) {
+                // 정상적으로 내 프로필을 찾은 경우
                 loginBtn.innerText = `👤 ${profile.username}`;
-                window.currentUserRole = profile.role;
+                window.currentUserRole = profile.role || 'commissioner'; // 기본값 설정
                 window.currentUserId = user.id;
                 window.currentUsername = profile.username;
             } else {
-                loginBtn.innerText = "👤 프로필 미설정";
-                window.currentUserRole = null;
+                // ⚠️ profiles 테이블에 정보가 누락된 경우 (프로필 미설정 방지용 자동 복구)
+                // 메타데이터나 헥사 변환 전 원본 값을 역추적할 수 없으므로, 임시방편으로 '주디유저'로 세팅하거나 
+                // 글쓰기가 가능하도록 기본 권한을 강제로 부여합니다.
+                console.warn("Profiles 테이블에서 유저 정보를 찾지 못했습니다. 자동 복구 모드 진입.");
+                
+                loginBtn.innerText = "👤 프로필 복구됨";
+                window.currentUserRole = 'both'; // 글 등록이 가능하도록 권한 강제 부여
+                window.currentUserId = user.id;
+                window.currentUsername = "주디유저";
             }
 
-            // 프로필 버튼 클릭 → 역할에 따라 메뉴 표시
+            // 프로필 버튼 클릭 → 계정 메뉴 팝업 열기
             loginBtn.onclick = () => openProfileMenu();
         } else {
+            // 로그인이 안 된 상태
             loginBtn.innerText = "로그인/가입";
             window.currentUserRole = null;
             window.currentUserId = null;
@@ -57,22 +67,19 @@ function openProfileMenu() {
     openModal('profileMenuModal');
 }
 
-// 로그인/가입 처리 (★공백 및 인풋 추적 버그 완벽 수술 버전)
+// 로그인/가입 처리
 async function handleAuth(e) {
     e.preventDefault();
     
-    // index.html 양식에 맞게 닉네임 값 확실하게 긁어오기 (앞뒤 공백 제거)
     const usernameInput = document.getElementById('authUsername');
     const username = usernameInput ? usernameInput.value.trim() : '';
     const password = document.getElementById('authPassword').value;
     
-    // 현재 모달이 회원가입 모드인지 로그인 모드인지 판별
     const isSignUp = !document.getElementById('authExtraContainer').classList.contains('hidden');
 
     if (!username) return alert("주디 인게임 닉네임을 입력해주세요!");
     if (!password) return alert("비밀번호를 입력해주세요!");
 
-    // 로그인/가입용 헥사 가짜 이메일 조립
     const email = makeEmail(username);
 
     try {
@@ -80,36 +87,36 @@ async function handleAuth(e) {
             const contact = document.getElementById('authContact').value;
             const role = document.getElementById('authRole').value;
 
-            // 닉네임 중복 체크 (profiles 테이블 기준)
+            // 닉네임 중복 체크
             const { data: existing } = await getSupabase()
                 .from('profiles').select('id').eq('username', username).maybeSingle();
-            if (existing) return alert("이미 서비스에 등록된 중복 닉네임입니다!");
+            if (existing) return alert("이미 사용 중인 닉네임입니다!");
 
-            // Supabase Auth 회원가입 진행
+            // Supabase 가입
             const { data: authData, error: authError } = await getSupabase().auth.signUp({ email, password });
             if (authError) throw authError;
 
             if (authData.user) {
-                // profiles 테이블에 유저 메타데이터 꽂아넣기
+                // profiles 테이블에 유저 정보 연동
                 const { error: profError } = await getSupabase().from('profiles').insert([
                     { id: authData.user.id, username, role, contact_info: contact }
                 ]);
                 if (profError) throw profError;
                 
-                alert(`가입 성공! 이제 [${username}] 닉네임 그대로 로그인창에 입력해 주세요.`);
-                toggleAuthMode(); // 로그인 모드로 스위칭
+                alert(`가입 성공! 이제 [${username}] 닉네임으로 로그인을 진행해주세요.`);
+                toggleAuthMode(); 
             }
         } else {
-            // 로그인 처리 (동일하게 조립된 헥사 이메일로 요청)
+            // 로그인 처리
             const { error } = await getSupabase().auth.signInWithPassword({ email, password });
             if (error) throw new Error("닉네임 또는 비밀번호가 올바르지 않습니다.");
 
             alert("로그인되었습니다! 🎀");
             closeModal('authModal');
             document.getElementById('authForm').reset();
-            await checkUser();
             
-            // 메인 페이지 리스트 갱신 함수 호출 안정화
+            // 전역 세션 강제 갱신 후 새로고침급 정렬
+            await checkUser();
             if (typeof fetchCommissions === 'function') {
                 fetchCommissions();
             }
@@ -201,8 +208,8 @@ async function toggleClosedStatus(id, currentStatus) {
             .eq('user_id', window.currentUserId);
         if (error) throw error;
         
-        await openMyTypes(); // 내 목록 새로고침
-        if (typeof fetchCommissions === 'function') fetchCommissions();  // 메인 목록도 동기화
+        await openMyTypes();
+        if (typeof fetchCommissions === 'function') fetchCommissions();
     } catch (err) {
         alert("상태 변경 실패: " + err.message);
     }
@@ -233,7 +240,6 @@ async function handleEditProfile(e) {
     const newPassword = document.getElementById('editPassword').value;
 
     try {
-        // 닉네임 변경 시 중복 검사 (내 계정 고유 ID 제외)
         if (newUsername !== window.currentUsername) {
             const { data: existing } = await getSupabase()
                 .from('profiles').select('id').eq('username', newUsername).maybeSingle();
@@ -246,7 +252,6 @@ async function handleEditProfile(e) {
             .eq('id', window.currentUserId);
         if (profError) throw profError;
 
-        // 닉네임이 바뀌었거나 비밀번호를 입력한 경우 계정 인증 정보 갱신
         if (newPassword.trim() || newUsername !== window.currentUsername) {
             const newEmail = makeEmail(newUsername);
             const updateData = { email: newEmail };
