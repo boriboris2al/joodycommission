@@ -1,6 +1,4 @@
 // commission.js
-// 🔴 수정: 최상단에서 즉시 할당하지 않고 함수로 감쌈 (타이밍 문제 해결)
-const getSupabase = () => window.supabaseClient;
 
 let currentFilter = '전체';
 let currentSearch = '';
