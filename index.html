@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주디 커미션 중개소</title>
+    <title>주디 커미션</title>
+    
+    <!-- 🔤 KoPubWorld 돋움체 웹 폰트 로드 (Bold 및 Medium 포함) -->
+    <link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KoPubWorldDotum.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
+        /* 전체 서비스에 KoPubWorldDotum 폰트 강제 적용 및 부드러운 렌더링 */
+        * {
+            font-family: 'KoPubWorldDotum', sans-serif !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
         body { max-width: 420px; margin: 0 auto; background-color: #f3f4f6; min-height: 100vh; box-shadow: 0 0 20px rgba(0,0,0,0.05); }
         .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 16px; }
         .modal.active { display: flex; }
@@ -106,8 +118,8 @@
                             <label><input type="checkbox" id="tagBody" data-name="전신"> 전신</label>
                         </div>
                     </div>
-                    <input type="text" id="commItem" placeholder="💎 받는 아이템 란 (상세 기재)" class="w-full p-3 rounded-xl border border-gray-200">
-                    <input type="text" id="commCredit" placeholder="📌 출처 표기 방식 (한줄란)" class="w-full p-3 rounded-xl border border-gray-200">
+                    <input type="text" id="commItem" placeholder="💎 받는 아이템 (상세 기재)" class="w-full p-3 rounded-xl border border-gray-200">
+                    <input type="text" id="commCredit" placeholder="📌 출처 표기 방식" class="w-full p-3 rounded-xl border border-gray-200">
                     <input type="text" id="commContact" placeholder="💬 신청 연락망 (예: 오픈채팅 링크 또는 인게임닉으로 연락)" class="w-full p-3 rounded-xl border border-pink-300" required>
                     <textarea id="commDesc" placeholder="타입에 대한 세부 설명을 작성해주세요." rows="4" class="w-full p-3 rounded-xl border border-gray-200"></textarea>
                     <div>
@@ -151,7 +163,7 @@
             </div>
             <button id="detailContactBtn" class="w-full bg-pink-500 text-white p-3 rounded-xl font-bold text-sm shadow-md hover:bg-pink-600 transition-colors"></button>
             <div class="border-t border-gray-100 pt-4 space-y-3">
-                <h3 class="text-xs font-bold text-gray-800">💬 실사용 유저 후기</h3>
+                <h3 class="text-xs font-bold text-gray-800">💬 신청 후기</h3>
                 <div id="reviewList" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
                 <form id="reviewForm" class="pt-2 border-t border-dashed border-gray-100 space-y-2">
                     <input type="hidden" id="targetCommissionId">
@@ -218,6 +230,7 @@
         </div>
     </div>
 
+    <!-- 외부 분리형 파일 연결 -->
     <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
     <script src="commission.js"></script>
