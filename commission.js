@@ -1,36 +1,47 @@
 // commission.js
 const supabase = window.supabaseClient;
 
-// 전역 상태 변수 (현재 필터 및 검색어 상태 기억)
 let currentFilter = '전체';
 let currentSearch = '';
 
-// 1. 메인 화면에 커미션 목록 띄우기 (필터 및 검색 적용)
+// [필독] 이번 에러의 핵심 범인! 하단 탭의 ➕ 버튼을 누르면 작동하는 함수입니다.
+function openRegisterModal() {
+    // 1. 로그인 여부 체크
+    if (!window.currentUserRole) {
+        alert("로그인이 필요한 서비스입니다. 로그인 또는 회원가입을 먼저 해주세요!");
+        openModal('authModal');
+        return;
+    }
+    
+    // 2. 권한 체크 (신청자 계정은 글쓰기 차단)
+    if (window.currentUserRole === 'applicant') {
+        alert("신청자 전용 계정은 커미션을 등록할 수 없습니다. 글을 쓰려면 '커미션주' 계정으로 가입해 주세요.");
+        return;
+    }
+    
+    // 3. 통과 시 등록 모달 오픈
+    openModal('regModal');
+}
+
+// 1. 메인 화면에 커미션 목록 띄우기 (실시간 필터 및 검색 반영)
 async function fetchCommissions() {
     const listContainer = document.getElementById('commissionList');
     if (!listContainer) return;
     
     try {
-        // 기본 쿼리 생성 (profiles 정보 포함)
         let query = supabase
             .from('commissions')
             .select(`id, title, price, slot_type, tags, image_url, profiles ( username )`);
 
-        // [검색 조건] 제목 또는 닉네임 검색
         if (currentSearch.trim() !== '') {
-            // 주디 닉네임 또는 제목에 검색어가 포함된 경우 (ilike는 대소문자 구분 없는 포함 검색)
-            // 주의: supabase에서 관계 테이블(profiles) 필터링은 편의상 클라이언트 단 처리 혹은 rpc를 쓰지만, 여기서는 간단히 제목 기반 검색으로 우선 처리 후 고도화합니다.
             query = query.ilike('title', `%${currentSearch}%`);
         }
 
-        // [필터 조건] '전체'가 아니면 해당 태그를 포함하고 있는지 검사
         if (currentFilter !== '전체') {
             query = query.contains('tags', [currentFilter]);
         }
 
-        // 최신순 정렬
         const { data, error } = await query.order('created_at', { ascending: false });
-
         if (error) throw error;
 
         if (data.length === 0) {
@@ -66,45 +77,22 @@ async function fetchCommissions() {
     }
 }
 
-// 필터 변경 함수
+// 필터 버튼 클릭 시 작동
 function changeFilter(target, filterName) {
-    // 이전 활성화된 버튼 스타일 리셋
     const buttons = target.parentElement.querySelectorAll('button');
     buttons.forEach(btn => {
         btn.className = "bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition";
     });
-    // 선택된 버튼만 하이라이트
     target.className = "bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition";
-    
     currentFilter = filterName;
     fetchCommissions();
 }
 
-// 2. 새 커미션 등록 로직
-
-// 등록 모달 열기 시 로그인 여부 및 권한 검사 (비회원 & 신청자 차단)
-function openRegisterModal() {
-    // 1. 로그인 체크 (window.currentUserRole이 없거나 유저 상태가 확인되지 않을 때)
-    if (!window.currentUserRole) {
-        alert("로그인이 필요한 서비스입니다. 로그인 또는 회원가입을 먼저 해주세요!");
-        openModal('authModal'); // 자동으로 로그인/가입 모달창을 띄워줌
-        return;
-    }
-    
-    // 2. 권한 체크 (신청자 전용 계정은 차단)
-    if (window.currentUserRole === 'applicant') {
-        alert("신청자 전용 계정은 커미션을 등록할 수 없습니다. 글을 쓰려면 '커미션주' 계정으로 가입해 주세요.");
-        return;
-    }
-    
-    // 3. 둘 다 통과하면 등록 모달 열기
-    openModal('regModal');
-}
-
+// 2. 새 커미션 등록 처리 (이미지 업로드 + 개별 연락망 반영)
 async function handleCreateCommission(e) {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return alert("로그인이 필요한 기능입니다.");
+    if (!user || window.currentUserRole === 'applicant') return alert("작성 권한이 없습니다.");
 
     const title = document.getElementById('commTitle').value;
     const price = parseFloat(document.getElementById('commPrice').value);
@@ -112,9 +100,12 @@ async function handleCreateCommission(e) {
     const description = document.getElementById('commDesc').value;
     const item_wanted = document.getElementById('commItem').value;
     const credit_rule = document.getElementById('commCredit').value;
+    const custom_contact = document.getElementById('commContact').value; 
     const imageFile = document.getElementById('commImage').files[0];
     
-    // 선택 가능한 모든 카테고리 체크박스 수집
+    if (!custom_contact.trim()) return alert("신청 연락망을 입력해 주세요!");
+
+    // 선택된 모든 체크박스 태그 수집
     const tags = [];
     ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody'].forEach(id => {
         const el = document.getElementById(id);
@@ -136,25 +127,28 @@ async function handleCreateCommission(e) {
             image_url = data.publicUrl;
         }
 
+        // DB 등록
         const { error } = await supabase.from('commissions').insert([{
             user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, image_url
         }]);
 
+        // 글 작성 시 입력한 개별 연락망을 프로필에도 실시간 동기화
+        await supabase.from('profiles').update({ contact_info: custom_contact }).eq('id', user.id);
+
         if (error) throw error;
 
-        alert("커미션이 등록되었습니다!");
+        alert("커미션이 성공적으로 등록되었습니다!");
         closeModal('regModal');
         document.getElementById('regForm').reset();
         fetchCommissions();
     } catch (error) {
-        alert(error.message);
+        alert("등록 실패: " + error.message);
     }
 }
 
-// 3. 상세 페이지 팝업 열기
+// 3. 상세 팝업창 열기 및 데이터 매핑
 async function openDetail(id) {
     try {
-        // 커미션 상세 정보 가져오기
         const { data: item, error } = await supabase
             .from('commissions')
             .select(`*, profiles ( username, contact_info )`)
@@ -163,7 +157,6 @@ async function openDetail(id) {
 
         if (error) throw error;
 
-        // 상세 모달창에 데이터 꽂아넣기
         document.getElementById('detailImg').src = item.image_url || 'https://via.placeholder.com/350x200?text=No+Image';
         document.getElementById('detailPrice').innerText = `${item.price} 가치`;
         document.getElementById('detailTitle').innerText = item.title;
@@ -173,34 +166,29 @@ async function openDetail(id) {
         document.getElementById('detailCredit').innerText = item.credit_rule || '자유롭게 표기 가능';
         document.getElementById('detailDesc').innerText = item.description || '상세 설명이 없습니다.';
         
-        // 연락처 연결 버튼 설정
         const contactBtn = document.getElementById('detailContactBtn');
-        const contactInfo = item.profiles?.contact_info || '';
+        const contactInfo = item.profiles?.contact_info || ''; 
         
         if (contactInfo.startsWith('http')) {
             contactBtn.innerText = "💬 오픈채팅으로 신청하기";
             contactBtn.onclick = () => window.open(contactInfo, '_blank');
         } else {
-            contactBtn.innerText = `🎮 인게임 ID: ${contactInfo || item.profiles?.username} (복사하기)`;
+            contactBtn.innerText = `🎮 연락처: ${contactInfo} (복사하기)`;
             contactBtn.onclick = () => {
-                navigator.clipboard.writeText(contactInfo || item.profiles?.username);
-                alert('인게임 닉네임이 복사되었습니다! 인게임에서 연락해보세요.');
+                navigator.clipboard.writeText(contactInfo);
+                alert('연락처가 클립보드에 복사되었습니다!');
             };
         }
 
-        // 후기 작성을 위해 현재 커미션 ID 숨겨두기
         document.getElementById('targetCommissionId').value = id;
-
-        // 후기 목록 가져오기
         fetchReviews(id);
-
         openModal('detailModal');
     } catch (error) {
         alert('상세 정보를 불러오지 못했습니다: ' + error.message);
     }
 }
 
-// 4. 특정 커미션의 후기 목록 불러오기
+// 4. 후기 목록 조회
 async function fetchReviews(commissionId) {
     const reviewListContainer = document.getElementById('reviewList');
     reviewListContainer.innerHTML = "<p class='text-xs text-gray-400'>후기 로딩 중...</p>";
@@ -233,7 +221,7 @@ async function fetchReviews(commissionId) {
     }
 }
 
-// 5. 후기 등록하기
+// 5. 한줄 후기 등록
 async function handleCreateReview(e) {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
@@ -255,7 +243,7 @@ async function handleCreateReview(e) {
 
         alert('후기가 등록되었습니다!');
         document.getElementById('reviewContent').value = '';
-        fetchReviews(commissionId); // 후기 리스트 갱신
+        fetchReviews(commissionId);
     } catch (error) {
         alert('후기 등록 실패: ' + error.message);
     }
