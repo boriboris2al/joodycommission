@@ -81,6 +81,26 @@ function changeFilter(target, filterName) {
 }
 
 // 2. 새 커미션 등록 로직
+
+// 등록 모달 열기 시 로그인 여부 및 권한 검사 (비회원 & 신청자 차단)
+function openRegisterModal() {
+    // 1. 로그인 체크 (window.currentUserRole이 없거나 유저 상태가 확인되지 않을 때)
+    if (!window.currentUserRole) {
+        alert("로그인이 필요한 서비스입니다. 로그인 또는 회원가입을 먼저 해주세요!");
+        openModal('authModal'); // 자동으로 로그인/가입 모달창을 띄워줌
+        return;
+    }
+    
+    // 2. 권한 체크 (신청자 전용 계정은 차단)
+    if (window.currentUserRole === 'applicant') {
+        alert("신청자 전용 계정은 커미션을 등록할 수 없습니다. 글을 쓰려면 '커미션주' 계정으로 가입해 주세요.");
+        return;
+    }
+    
+    // 3. 둘 다 통과하면 등록 모달 열기
+    openModal('regModal');
+}
+
 async function handleCreateCommission(e) {
     e.preventDefault();
     const { data: { user } } = await supabase.auth.getUser();
