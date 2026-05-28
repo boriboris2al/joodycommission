@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>주디 커미션</title>
     
-    <!-- 🔤 KoPubWorld 돋움체 웹 폰트 로드 -->
     <link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KoPubWorldDotum.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -44,17 +43,25 @@
         }
         .modal.active { display: flex; }
         .scrollbar-none::-webkit-scrollbar { display: none; }
+        
+        /* 📸 스냅 슬라이더 모바일 웹 최적화 */
+        .snap-x {
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .snap-center {
+            scroll-snap-align: center;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col font-sans">
 
-    <!-- 헤더 -->
     <header class="bg-pink-100 p-4 sticky top-0 z-50 flex justify-between items-center border-b border-pink-200">
         <h1 class="text-xl font-bold text-pink-600 tracking-wider cursor-pointer" onclick="location.reload()">🎀 주디 커미션</h1>
         <button id="loginBtn" class="bg-pink-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-pink-600 transition">로그인/가입</button>
     </header>
 
-    <!-- 🏠 홈 화면 컨텐츠 섹션 -->
     <div id="sectionHome" class="flex-1 flex flex-col">
         <main class="flex-1 p-4 pb-20 overflow-x-hidden">
             <div id="searchBar" class="mb-4">
@@ -73,7 +80,6 @@
         </main>
     </div>
 
-    <!-- 🔖 북마크 화면 컨텐츠 섹션 (처음엔 숨김) -->
     <div id="sectionBookmark" class="flex-1 flex flex-col hidden">
         <main class="flex-1 p-4 pb-20 overflow-x-hidden">
             <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 내가 찜한 커미션</h2>
@@ -81,14 +87,12 @@
         </main>
     </div>
 
-    <!-- 하단 탭 바 -->
     <nav class="fixed bottom-0 left-0 right-0 max-w-[420px] mx-auto bg-white border-t border-gray-100 p-2 flex justify-around items-center z-50">
         <button id="tabHome" class="flex flex-col items-center text-pink-500 font-semibold text-xs" onclick="switchTab('home')">🏠<span class="mt-0.5">홈</span></button>
         <button id="registerTabBtn" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400">➕<span class="mt-0.5">등록</span></button>
         <button id="tabBookmark" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400" onclick="switchTab('bookmark')">🔖<span class="mt-0.5">북마크</span></button>
     </nav>
 
-    <!-- 1. 로그인/회원가입 모달 -->
     <div id="authModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 relative shadow-xl overflow-x-hidden">
             <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -112,13 +116,12 @@
         </div>
     </div>
 
-    <!-- 2. 커미션 등록 모달 -->
     <div id="regModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl">
             <button onclick="closeModal('regModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
-            <h2 class="text-lg font-bold text-gray-900">내 커미션 등록</h2>
+            <h2 id="regModalTitle" class="text-lg font-bold text-gray-900">내 커미션 등록</h2>
             <form id="regForm">
-                <div class="space-y-3 text-sm">
+                <input type="hidden" id="editCommissionId"> <div class="space-y-3 text-sm">
                     <input type="text" id="commTitle" placeholder="타입 이름 (예: 말랑 뽀작 두상)" class="w-full p-3 rounded-xl border border-gray-200" required>
                     <div class="flex gap-2">
                         <input type="number" step="0.1" id="commPrice" placeholder="가격 (가치 단위)" class="w-1/2 p-3 rounded-xl border border-gray-200" required>
@@ -131,6 +134,15 @@
                             <option value="5">슬롯 5개</option>
                         </select>
                     </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-pink-5/30 rounded-xl border border-pink-100">
+                        <span class="text-xs font-semibold text-gray-600">🕵️ 타입을 나에게만 비공개 처리</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="commIsPrivate" class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+                        </label>
+                    </div>
+
                     <div class="p-3 bg-gray-50 rounded-xl space-y-2">
                         <p class="text-xs font-semibold text-gray-500">세부 분류 태그 선택</p>
                         <div class="grid grid-cols-3 gap-2 text-xs text-gray-600">
@@ -153,34 +165,36 @@
                     <input type="text" id="commCredit" placeholder="📌 출처 표기 방식" class="w-full p-3 rounded-xl border border-gray-200">
                     <input type="text" id="commContact" placeholder="💬 신청 연락망 (예: 오픈채팅 링크 등)" class="w-full p-3 rounded-xl border border-pink-300" required>
                     <textarea id="commDesc" placeholder="타입에 대한 세부 설명을 작성해주세요." rows="4" class="w-full p-3 rounded-xl border border-gray-200"></textarea>
+                    
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 block mb-1">샘플 이미지 업로드</label>
-                        <input type="file" id="commImage" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100" required>
+                        <label class="text-xs font-semibold text-gray-500 block mb-1">샘플 이미지 업로드 (최대 4장)</label>
+                        <input type="file" id="commImage" accept="image/*" multiple class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100">
+                        <p id="editImgNotice" class="text-[10px] text-amber-500 mt-1 hidden">⚠️ 수정 모드: 새 사진을 올리면 기존 샘플들이 덮어씌워집니다.</p>
                     </div>
-                    <button type="submit" class="w-full bg-pink-500 text-white p-3 rounded-xl font-bold mt-2">등록 완료</button>
+                    <button type="submit" id="regSubmitBtn" class="w-full bg-pink-500 text-white p-3 rounded-xl font-bold mt-2">등록 완료</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 🔍 3. 커미션 상세 모달 (북마크 버튼 탑재!) -->
     <div id="detailModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-2xl">
-            <!-- 닫기 버튼 및 삭제/북마크 버튼 상단 액션 바 -->
-            <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-10">
-                <button id="detailDeleteBtn" class="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold shadow-xs border border-red-200 hover:bg-red-100 hidden">🔴 타입 삭제</button>
-                
-                <!-- 🌟 북마크(찜하기) 버튼 추가 -->
-                <button id="detailBookmarkBtn" class="bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-xs font-bold shadow-xs border border-amber-200 hover:bg-amber-100">🤍 북마크</button>
-                
-                <div class="flex-1"></div>
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
+                <div class="flex gap-1.5">
+                    <button id="detailDeleteBtn" class="bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs border border-red-200 hover:bg-red-100 hidden">🔴 삭제</button>
+                    <button id="detailEditBtn" class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs border border-blue-200 hover:bg-blue-100 hidden">✏️ 수정</button>
+                </div>
+                <button id="detailBookmarkBtn" class="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs border border-amber-200 hover:bg-amber-100">🤍 북마크</button>
                 <button onclick="closeModal('detailModal')" class="bg-white/90 text-gray-500 w-8 h-8 rounded-full flex items-center justify-center shadow-md font-bold text-lg">✕</button>
             </div>
             
-            <div class="h-56 bg-gray-100 rounded-2xl overflow-hidden relative -mt-1 -mx-1">
-                <img id="detailImg" src="" class="w-full h-full object-cover">
-                <span id="detailPrice" class="absolute bottom-3 right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md"></span>
+            <div class="relative -mt-1 -mx-1 rounded-2xl overflow-hidden group">
+                <div id="detailSliderContainer" class="h-56 bg-gray-100 flex overflow-x-auto snap-x snap-mandatory scrollbar-none">
+                    </div>
+                <span id="detailPrice" class="absolute bottom-3 right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md z-10"></span>
+                <span id="detailImgCounter" class="absolute bottom-3 left-3 bg-black/50 text-white text-[10px] font-medium px-2 py-0.5 rounded-full z-10 hidden"></span>
             </div>
+
             <div class="border-b border-gray-100 pb-3">
                 <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
                     <span id="detailArtist"></span>
@@ -228,7 +242,6 @@
         </div>
     </div>
 
-    <!-- 4. 프로필 메뉴 모달 -->
     <div id="profileMenuModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl overflow-x-hidden">
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -241,7 +254,6 @@
         </div>
     </div>
 
-    <!-- 5. 내 타입 보기 모달 -->
     <div id="myTypesModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl">
             <button onclick="closeModal('myTypesModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -250,7 +262,6 @@
         </div>
     </div>
 
-    <!-- 6. 정보 수정 모달 -->
     <div id="editProfileModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl overflow-x-hidden">
             <button onclick="closeModal('editProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -283,7 +294,6 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // 🌟 탭 스위칭 함수 추가
         function switchTab(tab) {
             const secHome = document.getElementById('sectionHome');
             const secBookmark = document.getElementById('sectionBookmark');
@@ -291,17 +301,17 @@
             const btnBookmark = document.getElementById('tabBookmark');
 
             if (tab === 'home') {
-                secHome.classList.remove('hidden');
-                secBookmark.classList.add('hidden');
-                btnHome.className = "flex flex-col items-center text-pink-500 font-semibold text-xs";
-                btnBookmark.className = "flex flex-col items-center text-gray-400 text-xs hover:text-pink-400";
-                fetchCommissions();
+                if (secHome) secHome.classList.remove('hidden');
+                if (secBookmark) secBookmark.classList.add('hidden');
+                if (btnHome) btnHome.className = "flex flex-col items-center text-pink-500 font-semibold text-xs";
+                if (btnBookmark) btnBookmark.className = "flex flex-col items-center text-gray-400 text-xs hover:text-pink-400";
+                if (typeof fetchCommissions === 'function') fetchCommissions();
             } else if (tab === 'bookmark') {
-                secHome.classList.add('hidden');
-                secBookmark.classList.remove('hidden');
-                btnHome.className = "flex flex-col items-center text-gray-400 text-xs hover:text-pink-400";
-                btnBookmark.className = "flex flex-col items-center text-pink-500 font-semibold text-xs";
-                fetchBookmarks(); // commission.js 안의 북마크 로드 함수 호출
+                if (secHome) secHome.classList.add('hidden');
+                if (secBookmark) secBookmark.classList.remove('hidden');
+                if (btnHome) btnHome.className = "flex flex-col items-center text-gray-400 text-xs hover:text-pink-400";
+                if (btnBookmark) btnBookmark.className = "flex flex-col items-center text-pink-500 font-semibold text-xs";
+                if (typeof fetchBookmarks === 'function') fetchBookmarks();
             }
         }
 
@@ -310,24 +320,36 @@
             return false;
         };
 
-        document.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('load', () => {
             if (!window.supabaseClient) {
                 alert("🚨 에러: supabase-config.js 설정을 확인해주세요.");
                 return;
             }
 
-            checkUser();
-            fetchCommissions();
+            if (typeof checkUser === 'function') checkUser();
+            if (typeof fetchCommissions === 'function') fetchCommissions();
 
-            document.getElementById('registerTabBtn').addEventListener('click', () => openRegisterModal());
-            document.getElementById('authForm').addEventListener('submit', (e) => handleAuth(e));
-            document.getElementById('regForm').addEventListener('submit', (e) => handleCreateCommission(e));
-            document.getElementById('reviewForm').addEventListener('submit', (e) => handleCreateReview(e));
+            // 상단 ➕ 클릭 인터페이스 초기화용 트리거 연동
+            const regBtn = document.getElementById('registerTabBtn');
+            if (regBtn) {
+                regBtn.addEventListener('click', () => {
+                    // 등록 모드 초기화 보장
+                    document.getElementById('editCommissionId').value = "";
+                    document.getElementById('regForm').reset();
+                    document.getElementById('regModalTitle').innerText = "내 커미션 등록";
+                    document.getElementById('regSubmitBtn').innerText = "등록 완료";
+                    document.getElementById('editImgNotice').classList.add('hidden');
+                    openRegisterModal();
+                });
+            }
 
-            document.getElementById('searchInput').addEventListener('input', (e) => {
-                currentSearch = e.target.value;
-                fetchCommissions();
-            });
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    currentSearch = e.target.value;
+                    if (typeof fetchCommissions === 'function') fetchCommissions();
+                });
+            }
         });
     </script>
 </body>
