@@ -1,8 +1,4 @@
 // commission.js
-// 🚨 중복 선언 에러(Identifier already been declared) 방지를 위해 const를 빼고 글로벌 변수 설정
-if (window.supabaseClient) {
-    supabase = window.supabaseClient;
-}
 
 let currentFilter = '전체';
 let currentSearch = '';
