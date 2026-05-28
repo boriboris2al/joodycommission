@@ -1,5 +1,4 @@
 // commission.js
-const supabase = window.supabaseClient;
 
 let currentFilter = '전체';
 let currentSearch = '';
