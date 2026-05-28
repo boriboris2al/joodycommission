@@ -1,9 +1,14 @@
 // auth.js
 const getSupabase = () => window.supabaseClient;
 
-// 닉네임으로 가짜 이메일 생성 (Supabase Auth용)
+// 닉네임으로 가짜 이메일 생성 (한글 포함 모든 닉네임 안전하게 처리)
 function makeEmail(username) {
-    return `${username.trim().toLowerCase().replace(/\s+/g, '_')}@joody.com`;
+    // encodeURIComponent로 한글을 %XX 형태로 변환 후 btoa로 base64 인코딩
+    const encoded = btoa(encodeURIComponent(username.trim()))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    return encoded + '@joody.com';
 }
 
 // 현재 로그인한 유저 확인 및 UI 변경
