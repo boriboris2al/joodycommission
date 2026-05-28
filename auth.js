@@ -1,6 +1,10 @@
 // auth.js
-// 🔴 수정: 최상단에서 즉시 할당하지 않고 함수로 감쌈 (타이밍 문제 해결)
 const getSupabase = () => window.supabaseClient;
+
+// 닉네임으로 가짜 이메일 생성 (Supabase Auth용)
+function makeEmail(username) {
+    return `${username.trim().toLowerCase().replace(/\s+/g, '_')}@joody.com`;
+}
 
 // 현재 로그인한 유저 확인 및 UI 변경
 async function checkUser() {
@@ -36,20 +40,31 @@ async function checkUser() {
     }
 }
 
-// 이메일 로그인/가입 처리
+// 닉네임+비밀번호 로그인/가입 처리
 async function handleAuth(e) {
     e.preventDefault();
-    const email = document.getElementById('authEmail').value;
+    const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value;
-    const username = document.getElementById('authUsername').value;
-    const contact = document.getElementById('authContact').value;
-    const role = document.getElementById('authRole').value;
+    const isSignUp = !document.getElementById('authExtraContainer').classList.contains('hidden');
 
-    const isSignUp = !document.getElementById('authUsernameContainer').classList.contains('hidden');
+    if (!username) return alert("인게임 닉네임을 입력해주세요!");
+    if (!password) return alert("비밀번호를 입력해주세요!");
+
+    // 닉네임 → 가짜 이메일 변환 (Supabase Auth 내부용)
+    const email = makeEmail(username);
 
     try {
         if (isSignUp) {
-            if (!username.trim()) return alert("인게임 닉네임을 입력해주세요!");
+            const contact = document.getElementById('authContact').value;
+            const role = document.getElementById('authRole').value;
+
+            // 닉네임 중복 체크
+            const { data: existing } = await getSupabase()
+                .from('profiles')
+                .select('id')
+                .eq('username', username)
+                .maybeSingle();
+            if (existing) return alert("이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요!");
 
             const { data: authData, error: authError } = await getSupabase().auth.signUp({ email, password });
             if (authError) throw authError;
@@ -60,12 +75,18 @@ async function handleAuth(e) {
                 ]);
                 if (profError) throw profError;
 
-                alert("가입 성공! 가입하신 정보로 로그인을 진행해주세요.");
+                alert("가입 성공! 닉네임과 비밀번호로 로그인해주세요.");
                 toggleAuthMode();
             }
         } else {
             const { error } = await getSupabase().auth.signInWithPassword({ email, password });
-            if (error) throw error;
+            if (error) {
+                // 로그인 실패 시 친절한 메시지
+                if (error.message.includes('Invalid login')) {
+                    throw new Error("닉네임 또는 비밀번호가 올바르지 않습니다.");
+                }
+                throw error;
+            }
 
             alert("로그인되었습니다!");
             closeModal('authModal');
@@ -84,18 +105,22 @@ async function handleLogout() {
     location.reload();
 }
 
+// 로그인 ↔ 회원가입 토글
 function toggleAuthMode() {
-    const usernameContainer = document.getElementById('authUsernameContainer');
+    const extraContainer = document.getElementById('authExtraContainer');
     const submitBtn = document.getElementById('authSubmitBtn');
     const toggleText = document.getElementById('authToggleText');
+    const title = document.getElementById('authModalTitle');
 
-    if (usernameContainer.classList.contains('hidden')) {
-        usernameContainer.classList.remove('hidden');
+    if (extraContainer.classList.contains('hidden')) {
+        extraContainer.classList.remove('hidden');
         submitBtn.innerText = "회원가입하기";
         toggleText.innerText = "이미 계정이 있으신가요? 로그인";
+        title.innerText = "회원가입";
     } else {
-        usernameContainer.classList.add('hidden');
+        extraContainer.classList.add('hidden');
         submitBtn.innerText = "로그인하기";
-        toggleText.innerText = "처음이신가요? 인게임 닉네임으로 가입하기";
+        toggleText.innerText = "처음이신가요? 회원가입";
+        title.innerText = "로그인";
     }
 }
