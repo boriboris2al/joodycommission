@@ -1,42 +1,36 @@
 // commission.js
-const supabase = window.supabaseClient;
+// 🔴 수정: 최상단에서 즉시 할당하지 않고 함수로 감쌈 (타이밍 문제 해결)
+const getSupabase = () => window.supabaseClient;
 
 let currentFilter = '전체';
 let currentSearch = '';
 
-// [필독] 이번 에러의 핵심 범인! 하단 탭의 ➕ 버튼을 누르면 작동하는 함수입니다.
 function openRegisterModal() {
-    // 1. 로그인 여부 체크
     if (!window.currentUserRole) {
         alert("로그인이 필요한 서비스입니다. 로그인 또는 회원가입을 먼저 해주세요!");
         openModal('authModal');
         return;
     }
-    
-    // 2. 권한 체크 (신청자 계정은 글쓰기 차단)
     if (window.currentUserRole === 'applicant') {
         alert("신청자 전용 계정은 커미션을 등록할 수 없습니다. 글을 쓰려면 '커미션주' 계정으로 가입해 주세요.");
         return;
     }
-    
-    // 3. 통과 시 등록 모달 오픈
     openModal('regModal');
 }
 
-// 1. 메인 화면에 커미션 목록 띄우기 (실시간 필터 및 검색 반영)
+// 1. 커미션 목록 불러오기
 async function fetchCommissions() {
     const listContainer = document.getElementById('commissionList');
     if (!listContainer) return;
-    
+
     try {
-        let query = supabase
+        let query = getSupabase()
             .from('commissions')
             .select(`id, title, price, slot_type, tags, image_url, profiles ( username )`);
 
         if (currentSearch.trim() !== '') {
             query = query.ilike('title', `%${currentSearch}%`);
         }
-
         if (currentFilter !== '전체') {
             query = query.contains('tags', [currentFilter]);
         }
@@ -77,7 +71,6 @@ async function fetchCommissions() {
     }
 }
 
-// 필터 버튼 클릭 시 작동
 function changeFilter(target, filterName) {
     const buttons = target.parentElement.querySelectorAll('button');
     buttons.forEach(btn => {
@@ -88,10 +81,10 @@ function changeFilter(target, filterName) {
     fetchCommissions();
 }
 
-// 2. 새 커미션 등록 처리 (이미지 업로드 + 개별 연락망 반영)
+// 2. 새 커미션 등록
 async function handleCreateCommission(e) {
     e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getSupabase().auth.getUser();
     if (!user || window.currentUserRole === 'applicant') return alert("작성 권한이 없습니다.");
 
     const title = document.getElementById('commTitle').value;
@@ -100,16 +93,15 @@ async function handleCreateCommission(e) {
     const description = document.getElementById('commDesc').value;
     const item_wanted = document.getElementById('commItem').value;
     const credit_rule = document.getElementById('commCredit').value;
-    const custom_contact = document.getElementById('commContact').value; 
+    const custom_contact = document.getElementById('commContact').value;
     const imageFile = document.getElementById('commImage').files[0];
-    
+
     if (!custom_contact.trim()) return alert("신청 연락망을 입력해 주세요!");
 
-    // 선택된 모든 체크박스 태그 수집
     const tags = [];
     ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody'].forEach(id => {
         const el = document.getElementById(id);
-        if(el && el.checked) tags.push(el.dataset.name);
+        if (el && el.checked) tags.push(el.dataset.name);
     });
 
     try {
@@ -117,25 +109,24 @@ async function handleCreateCommission(e) {
         if (imageFile) {
             const fileExt = imageFile.name.split('.').pop();
             const fileName = `${Date.now()}.${fileExt}`;
-            const { error: uploadError } = await supabase.storage
+            const { error: uploadError } = await getSupabase().storage
                 .from('commission-samples')
                 .upload(fileName, imageFile);
-
             if (uploadError) throw uploadError;
 
-            const { data } = supabase.storage.from('commission-samples').getPublicUrl(fileName);
+            const { data } = getSupabase().storage.from('commission-samples').getPublicUrl(fileName);
             image_url = data.publicUrl;
         }
 
-        // DB 등록
-        const { error } = await supabase.from('commissions').insert([{
-            user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, image_url
+        // 🟡 수정: contact_info를 commissions 테이블에도 저장
+        const { error } = await getSupabase().from('commissions').insert([{
+            user_id: user.id, title, price, slot_type, tags, description,
+            item_wanted, credit_rule, image_url, contact_info: custom_contact
         }]);
-
-        // 글 작성 시 입력한 개별 연락망을 프로필에도 실시간 동기화
-        await supabase.from('profiles').update({ contact_info: custom_contact }).eq('id', user.id);
-
         if (error) throw error;
+
+        // 프로필에도 동기화
+        await getSupabase().from('profiles').update({ contact_info: custom_contact }).eq('id', user.id);
 
         alert("커미션이 성공적으로 등록되었습니다!");
         closeModal('regModal');
@@ -146,15 +137,14 @@ async function handleCreateCommission(e) {
     }
 }
 
-// 3. 상세 팝업창 열기 및 데이터 매핑
+// 3. 상세 팝업창 열기
 async function openDetail(id) {
     try {
-        const { data: item, error } = await supabase
+        const { data: item, error } = await getSupabase()
             .from('commissions')
             .select(`*, profiles ( username, contact_info )`)
             .eq('id', id)
             .single();
-
         if (error) throw error;
 
         document.getElementById('detailImg').src = item.image_url || 'https://via.placeholder.com/350x200?text=No+Image';
@@ -165,10 +155,11 @@ async function openDetail(id) {
         document.getElementById('detailItem').innerText = item.item_wanted || '없음 (아무거나 가능)';
         document.getElementById('detailCredit').innerText = item.credit_rule || '자유롭게 표기 가능';
         document.getElementById('detailDesc').innerText = item.description || '상세 설명이 없습니다.';
-        
+
         const contactBtn = document.getElementById('detailContactBtn');
-        const contactInfo = item.profiles?.contact_info || ''; 
-        
+        // 🟡 수정: commissions 테이블의 contact_info 우선 사용, 없으면 profiles 것 사용
+        const contactInfo = item.contact_info || item.profiles?.contact_info || '';
+
         if (contactInfo.startsWith('http')) {
             contactBtn.innerText = "💬 오픈채팅으로 신청하기";
             contactBtn.onclick = () => window.open(contactInfo, '_blank');
@@ -194,12 +185,11 @@ async function fetchReviews(commissionId) {
     reviewListContainer.innerHTML = "<p class='text-xs text-gray-400'>후기 로딩 중...</p>";
 
     try {
-        const { data: reviews, error } = await supabase
+        const { data: reviews, error } = await getSupabase()
             .from('reviews')
             .select(`content, rating, profiles ( username )`)
             .eq('commission_id', commissionId)
             .order('created_at', { ascending: false });
-
         if (error) throw error;
 
         if (reviews.length === 0) {
@@ -224,7 +214,7 @@ async function fetchReviews(commissionId) {
 // 5. 한줄 후기 등록
 async function handleCreateReview(e) {
     e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await getSupabase().auth.getUser();
     if (!user) return alert("로그인 후 이용 가능합니다.");
 
     const commissionId = document.getElementById('targetCommissionId').value;
@@ -232,13 +222,12 @@ async function handleCreateReview(e) {
     const content = document.getElementById('reviewContent').value;
 
     try {
-        const { error } = await supabase.from('reviews').insert([{
+        const { error } = await getSupabase().from('reviews').insert([{
             commission_id: commissionId,
             writer_id: user.id,
-            rating: rating,
-            content: content
+            rating,
+            content
         }]);
-
         if (error) throw error;
 
         alert('후기가 등록되었습니다!');
