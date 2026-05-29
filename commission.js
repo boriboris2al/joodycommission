@@ -21,17 +21,14 @@ async function fetchCommissions() {
     if (!listContainer) return;
     
     try {
-        // 비공개 기능 작동을 위해 'is_private' 필드도 select
         let query = window.supabaseClient
             .from('commissions')
             .select(`id, title, price, slot_type, tags, image_url, is_closed, is_private, user_id, profiles ( username )`);
 
-        // 검색 처리
         if (currentSearch && currentSearch.trim() !== '') {
             query = query.ilike('title', `%${currentSearch}%`);
         }
 
-        // 태그 필터 처리
         if (currentFilter !== '전체') {
             query = query.contains('tags', [currentFilter]);
         }
@@ -39,8 +36,7 @@ async function fetchCommissions() {
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
-        // 🕵️ 요구사항 2: 비공개 글 필터링 가드
-        // 단, 본인이 쓴 글이라면 비공개 상태여도 메인 피드에서 보여야 하므로 필터링 규칙 결합
+        // 비공개 글 필터링: 본인 글이면 비공개여도 보임
         const visibleData = data.filter(item => {
             if (item.is_private === true) {
                 return window.currentUserId && window.currentUserId === item.user_id;
@@ -58,7 +54,6 @@ async function fetchCommissions() {
             const slotColor = item.is_closed ? 'bg-gray-200 text-gray-600' : 'bg-pink-50 text-pink-500';
             const tagsHTML = item.tags ? item.tags.map(tag => `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`).join(' ') : '';
             
-            // 이미지 주소 뭉치 파싱해서 대표사진 1장 출력
             let firstImg = 'https://via.placeholder.com/350x200?text=No+Image';
             if (item.image_url) {
                 firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
@@ -105,20 +100,18 @@ function changeFilter(target, filterName) {
     fetchCommissions();
 }
 
-// 2. 새 커미션 등록 및 ✏️ 요구사항 1: 수정하기 로직 통합 제어 함수
+// 2. 새 커미션 등록 및 수정하기 로직
 async function handleCreateCommission(e) {
     e.preventDefault();
     
     const { data: { user } } = await window.supabaseClient.auth.getUser();
     if (!user || window.currentUserRole === 'applicant') return alert("작성 권한이 없습니다.");
 
-    // 수정 모드 ID 여부 체크
     const editId = document.getElementById('editCommissionId').value;
 
     const title = document.getElementById('commTitle').value;
     const price = parseFloat(document.getElementById('commPrice').value);
     const slot_type = document.getElementById('commSlot').value;
-    const is_private = document.getElementById('commIsPrivate').checked; // 비공개 값 확보
     const description = document.getElementById('commDesc').value;
     const item_wanted = document.getElementById('commItem').value;
     const credit_rule = document.getElementById('commCredit').value;
@@ -139,10 +132,9 @@ async function handleCreateCommission(e) {
     try {
         let final_image_str = "";
 
-        // 📸 요구사항 3: 이미지 파일이 선택된 경우 멀티 업로드 루프 연산 실행 (최대 4장 이상)
         if (imageFiles.length > 0) {
             const urlArray = [];
-            for (let i = 0; i < Math.min(imageFiles.length, 6); i++) { // 안전 한도 6장 제한
+            for (let i = 0; i < Math.min(imageFiles.length, 6); i++) {
                 const file = imageFiles[i];
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${Date.now()}_${i}.${fileExt}`;
@@ -153,20 +145,18 @@ async function handleCreateCommission(e) {
                 const { data } = window.supabaseClient.storage.from('commission-samples').getPublicUrl(fileName);
                 if (data) urlArray.push(data.publicUrl);
             }
-            final_image_str = urlArray.join(','); // 여러 장의 주소를 콤마로 이어 붙여 스트링으로 직렬화
+            final_image_str = urlArray.join(',');
         }
 
         const dataPayload = {
-            user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, contact_info: custom_contact, is_private
+            user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, contact_info: custom_contact
         };
 
-        // 이미지 주소가 빌드된 경우에만 페이로드에 포함 (수정 모드 시 사진을 안 바꿀 수 있으므로)
         if (final_image_str !== "") {
             dataPayload.image_url = final_image_str;
         }
 
         if (editId) {
-            // ✏️ 수정 연산 실행
             const { error } = await window.supabaseClient
                 .from('commissions')
                 .update(dataPayload)
@@ -175,7 +165,6 @@ async function handleCreateCommission(e) {
             if (error) throw error;
             alert("커미션 타입 수정이 완료되었습니다! ✨");
         } else {
-            // 새 글 등록 연산 실행
             if (final_image_str === "") return alert("샘플 이미지를 최소 1장 이상 등록해주세요!");
             const { error } = await window.supabaseClient.from('commissions').insert([dataPayload]);
             if (error) throw error;
@@ -190,13 +179,12 @@ async function handleCreateCommission(e) {
     }
 }
 
-// 3. 상세 팝업창 열기 (📸 멀티 슬라이더 렌더링 주입)
+// 3. 상세 팝업창 열기
 async function openDetail(id) {
     try {
         const { data: item, error } = await window.supabaseClient.from('commissions').select(`*, profiles ( username )`).eq('id', id).single();
         if (error) throw error;
 
-        // 📸 요구사항 3: 이미지 파싱 및 슬라이드 동적 UI 주입
         const sliderContainer = document.getElementById('detailSliderContainer');
         const imgCounter = document.getElementById('detailImgCounter');
         
@@ -207,19 +195,17 @@ async function openDetail(id) {
             images = ['https://via.placeholder.com/350x200?text=No+Image'];
         }
 
-        // 이미지 돔 트리 구성
-        sliderContainer.innerHTML = images.map(url => `
-            <div class="w-full h-full flex-shrink-0 snap-center">
+        // 이미지 클릭 시 풀스크린 뷰어 팝업
+        sliderContainer.innerHTML = images.map((url, idx) => `
+            <div class="w-full h-full flex-shrink-0 snap-center cursor-zoom-in" onclick="openImageViewer(${JSON.stringify(images).replace(/"/g, '&quot;')}, ${idx})">
                 <img src="${url.trim()}" class="w-full h-full object-cover">
             </div>
         `).join('');
 
-        // 2장 이상일 때 인디케이터 띄워주기
         if (images.length > 1) {
             imgCounter.classList.remove('hidden');
             imgCounter.innerText = `👈 가로 슬라이드 넘겨보기 (1/${images.length})`;
             
-            // 사용자가 손가락으로 넘길 때 숫자 실시간 계산 인터랙션 추가
             sliderContainer.onscroll = () => {
                 const page = Math.round(sliderContainer.scrollLeft / sliderContainer.clientWidth) + 1;
                 imgCounter.innerText = `👈 가로 슬라이드 넘겨보기 (${page}/${images.length})`;
@@ -237,7 +223,6 @@ async function openDetail(id) {
         document.getElementById('detailCredit').innerText = item.credit_rule || '자유롭게 표기 가능';
         document.getElementById('detailDesc').innerText = item.description || '상세 설명이 없습니다.';
         
-        // 🔒 삭제 및 수정 버튼 권한 동시대조 가드
         const deleteBtn = document.getElementById('detailDeleteBtn');
         const editBtn = document.getElementById('detailEditBtn');
         
@@ -250,7 +235,7 @@ async function openDetail(id) {
                 editBtn.classList.remove('hidden');
                 editBtn.onclick = () => {
                     closeModal('detailModal');
-                    setupEditMode(item); // 수정 폼 로드 실행 함수 호출
+                    setupEditMode(item);
                 };
             }
         } else { 
@@ -258,7 +243,6 @@ async function openDetail(id) {
             if (editBtn) editBtn.classList.add('hidden'); 
         }
 
-        // 북마크 버튼 제어
         const bookmarkBtn = document.getElementById('detailBookmarkBtn');
         if (bookmarkBtn) {
             if (window.currentUserId) {
@@ -295,19 +279,73 @@ async function openDetail(id) {
     } catch (error) { alert('상세 정보를 불러오지 못했습니다: ' + error.message); }
 }
 
-// ✏️ 요구사항 1: 기존 데이터 불러와서 수정 전용 양식으로 변경해 주는 보조 함수
+// 이미지 풀스크린 뷰어 팝업
+function openImageViewer(images, startIdx) {
+    // 이미 열려있으면 제거
+    const existing = document.getElementById('imageViewerOverlay');
+    if (existing) existing.remove();
+
+    let current = startIdx;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'imageViewerOverlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.93);
+        z-index: 9999; display: flex; flex-direction: column;
+        justify-content: center; align-items: center;
+        padding: 16px;
+    `;
+
+    function render() {
+        overlay.innerHTML = `
+            <button id="viewerCloseBtn"
+                style="position:absolute; top:16px; right:16px; color:white; font-size:26px;
+                       background:rgba(255,255,255,0.15); border:none; cursor:pointer;
+                       z-index:10000; width:40px; height:40px; border-radius:50%;
+                       display:flex; align-items:center; justify-content:center; line-height:1;">✕</button>
+            <div style="display:flex; align-items:center; gap:8px; width:100%; max-width:420px; justify-content:center;">
+                ${images.length > 1 ? `<button id="viewerPrev" style="color:white; font-size:36px; background:rgba(255,255,255,0.15); border:none; cursor:pointer; flex-shrink:0; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:2px;">‹</button>` : '<div style="width:40px;"></div>'}
+                <img src="${images[current].trim()}" style="flex:1; max-width:100%; max-height:78vh; object-fit:contain; border-radius:12px; display:block;">
+                ${images.length > 1 ? `<button id="viewerNext" style="color:white; font-size:36px; background:rgba(255,255,255,0.15); border:none; cursor:pointer; flex-shrink:0; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:2px;">›</button>` : '<div style="width:40px;"></div>'}
+            </div>
+            ${images.length > 1 ? `<p style="color:rgba(255,255,255,0.5); font-size:12px; margin-top:14px; font-family: sans-serif;">${current + 1} / ${images.length}</p>` : ''}
+        `;
+
+        // 버튼 이벤트 재바인딩
+        const closeBtn = overlay.querySelector('#viewerCloseBtn');
+        if (closeBtn) closeBtn.onclick = () => overlay.remove();
+
+        const prevBtn = overlay.querySelector('#viewerPrev');
+        if (prevBtn) prevBtn.onclick = (e) => { e.stopPropagation(); current = (current - 1 + images.length) % images.length; render(); };
+
+        const nextBtn = overlay.querySelector('#viewerNext');
+        if (nextBtn) nextBtn.onclick = (e) => { e.stopPropagation(); current = (current + 1) % images.length; render(); };
+    }
+
+    render();
+    document.body.appendChild(overlay);
+
+    // 배경(오버레이 자체) 클릭 시 닫기
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.remove();
+    });
+
+    // ESC 키로 닫기
+    const escHandler = (e) => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); } };
+    document.addEventListener('keydown', escHandler);
+}
+
+// 수정 폼 세팅 (is_private 제거됨)
 function setupEditMode(item) {
     document.getElementById('editCommissionId').value = item.id;
     document.getElementById('commTitle').value = item.title;
     document.getElementById('commPrice').value = item.price;
     document.getElementById('commSlot').value = item.slot_type;
-    document.getElementById('commIsPrivate').checked = item.is_private || false; // 비공개 체크박스 동기화
     document.getElementById('commItem').value = item.item_wanted || '';
     document.getElementById('commCredit').value = item.credit_rule || '';
     document.getElementById('commContact').value = item.contact_info || '';
     document.getElementById('commDesc').value = item.description || '';
 
-    // 태그 체크박스 역바인딩 복구
     const tagIds = ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody'];
     tagIds.forEach(id => {
         const el = document.getElementById(id);
@@ -321,7 +359,7 @@ function setupEditMode(item) {
     openModal('regModal');
 }
 
-// 4. 북마크 추가/삭제 토글 연산 함수
+// 4. 북마크 추가/삭제 토글
 async function toggleBookmark(commissionId, isDeleteAction) {
     if (!window.currentUserId) return alert("로그인이 필요한 기능입니다.");
     try {
@@ -334,7 +372,7 @@ async function toggleBookmark(commissionId, isDeleteAction) {
     } catch (e) { alert("북마크 연산 실패: " + e.message); }
 }
 
-// 5. 하단 탭 [북마크] 전용 조회 함수
+// 5. 북마크 탭 조회
 async function fetchBookmarks() {
     const listContainer = document.getElementById('bookmarkList');
     if (!listContainer) return;
@@ -386,7 +424,7 @@ async function fetchBookmarks() {
     } catch (e) { listContainer.innerHTML = `<div class="text-center py-10 text-red-400 text-sm">북마크 로드 실패 ㅠㅠ</div>`; }
 }
 
-// 6. 커미션 글 삭제 처리
+// 6. 커미션 글 삭제
 async function handleDeleteCommission(id, title) {
     if (!confirm(`🚨정말 [ ${title} ] 타입을 삭제하시겠습니까?\n삭제된 데이터와 후기는 복구할 수 없습니다.`)) return;
     try {
@@ -438,4 +476,93 @@ async function handleCreateReview(e) {
         document.getElementById('reviewContent').value = '';
         fetchReviews(commissionId);
     } catch (error) { alert('후기 등록 실패: ' + error.message); }
+}
+
+// 9. 내 타입 목록 열기 (비공개 토글 포함)
+async function openMyTypes() {
+    closeModal('profileMenuModal');
+    const container = document.getElementById('myTypesList');
+    if (!container) return;
+    
+    container.innerHTML = "<p class='text-xs text-gray-400 text-center py-4'>불러오는 중...</p>";
+    openModal('myTypesModal');
+
+    try {
+        const { data, error } = await getSupabase()
+            .from('commissions')
+            .select('id, title, price, slot_type, is_closed, is_private')
+            .eq('user_id', window.currentUserId)
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+
+        if (data.length === 0) {
+            container.innerHTML = "<p class='text-xs text-gray-400 py-6 text-center'>등록한 커미션 타입이 없습니다.</p>";
+            return;
+        }
+
+        container.innerHTML = data.map(item => {
+            const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}개`;
+            const closedBadge = item.is_closed
+                ? `<span class="text-[10px] bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-bold">마감</span>`
+                : `<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">모집중</span>`;
+            const privateBadge = item.is_private
+                ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>`
+                : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
+
+            return `
+                <div class="bg-gray-50 rounded-xl p-3 flex justify-between items-center border border-gray-100">
+                    <div>
+                        <p class="text-sm font-bold text-gray-800">${item.title}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">${item.price} 가치 · ${slotText}</p>
+                    </div>
+                    <div class="flex flex-col gap-1 items-end">
+                        ${closedBadge}
+                        <button onclick="toggleClosedStatus(${item.id}, ${item.is_closed})" class="text-[10px] text-gray-400 underline hover:text-pink-500">
+                            ${item.is_closed ? '마감 해제' : '슬롯 마감'}
+                        </button>
+                        ${privateBadge}
+                        <button onclick="togglePrivateStatus(${item.id}, ${item.is_private})" class="text-[10px] text-gray-400 underline hover:text-purple-500">
+                            ${item.is_private ? '공개로 전환' : '비공개로 전환'}
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        container.innerHTML = "<p class='text-xs text-red-400 text-center py-4'>목록 로드 실패</p>";
+    }
+}
+
+// 슬롯 마감/해제 토글
+async function toggleClosedStatus(id, currentStatus) {
+    try {
+        const { error } = await getSupabase()
+            .from('commissions')
+            .update({ is_closed: !currentStatus })
+            .eq('id', id)
+            .eq('user_id', window.currentUserId);
+        if (error) throw error;
+        
+        await openMyTypes();
+        if (typeof fetchCommissions === 'function') fetchCommissions();
+    } catch (err) {
+        alert("상태 변경 실패: " + err.message);
+    }
+}
+
+// 비공개/공개 토글
+async function togglePrivateStatus(id, currentStatus) {
+    try {
+        const { error } = await getSupabase()
+            .from('commissions')
+            .update({ is_private: !currentStatus })
+            .eq('id', id)
+            .eq('user_id', window.currentUserId);
+        if (error) throw error;
+        
+        await openMyTypes();
+        if (typeof fetchCommissions === 'function') fetchCommissions();
+    } catch (err) {
+        alert("비공개 상태 변경 실패: " + err.message);
+    }
 }
