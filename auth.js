@@ -1,7 +1,7 @@
 // auth.js
 const getSupabase = () => window.supabaseClient;
 
-// 닉네임 → hex 이메일 변환 (기존 클로드 원본 로직 완벽 복구)
+// 닉네임 → hex 이메일 변환
 function makeEmail(username) {
     if (!username) return '';
     const hex = Array.from(new TextEncoder().encode(username.trim()))
@@ -10,14 +10,14 @@ function makeEmail(username) {
     return hex + '@joody.com';
 }
 
-// 현재 로그인한 유저 확인 및 UI 변경 (★안전 장치 대폭 강화 버전)
+// 현재 로그인한 유저 확인 및 UI 변경
 async function checkUser() {
     try {
         const { data: { user } } = await getSupabase().auth.getUser();
         const loginBtn = document.getElementById('loginBtn');
 
         if (user) {
-            // 1. profiles 테이블에서 내 유저 정보 조회
+            // profiles 테이블에서 내 유저 정보 조회
             const { data: profile, error } = await getSupabase()
                 .from('profiles')
                 .select('username, role')
@@ -25,9 +25,8 @@ async function checkUser() {
                 .maybeSingle();
 
             if (profile && profile.username) {
-                // 정상적으로 내 프로필을 찾은 경우
                 loginBtn.innerText = `👤 ${profile.username}`;
-                window.currentUserRole = profile.role || 'commissioner'; // 기본값 설정
+                window.currentUserRole = profile.role || 'commissioner';
                 window.currentUserId = user.id;
                 window.currentUsername = profile.username;
             }
@@ -35,7 +34,6 @@ async function checkUser() {
             // 프로필 버튼 클릭 → 계정 메뉴 팝업 열기
             loginBtn.onclick = () => openProfileMenu();
         } else {
-            // 로그인이 안 된 상태
             loginBtn.innerText = "로그인/가입";
             window.currentUserRole = null;
             window.currentUserId = null;
@@ -105,7 +103,6 @@ async function handleAuth(e) {
             closeModal('authModal');
             document.getElementById('authForm').reset();
             
-            // 전역 세션 강제 갱신 후 새로고침급 정렬
             await checkUser();
             if (typeof fetchCommissions === 'function') {
                 fetchCommissions();
@@ -141,7 +138,7 @@ function toggleAuthMode() {
     }
 }
 
-// 내 타입 목록 열기
+// 🖼️ 내 타입 목록 열기 대시보드 (🌟 수정/비공개/마감/삭제 완벽 통합형)
 async function openMyTypes() {
     closeModal('profileMenuModal');
     const container = document.getElementById('myTypesList');
@@ -153,7 +150,7 @@ async function openMyTypes() {
     try {
         const { data, error } = await getSupabase()
             .from('commissions')
-            .select('id, title, price, slot_type, is_closed')
+            .select('id, title, price, slot_type, max_slots, current_slots, is_closed, is_private')
             .eq('user_id', window.currentUserId)
             .order('created_at', { ascending: false });
         if (error) throw error;
@@ -164,21 +161,33 @@ async function openMyTypes() {
         }
 
         container.innerHTML = data.map(item => {
-            const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}개`;
+            // 새 다중 슬롯 시스템 매핑 문자열 정제
+            const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}개`;
             const closedBadge = item.is_closed
                 ? `<span class="text-[10px] bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-bold">마감</span>`
                 : `<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">모집중</span>`;
+            const privateBadge = item.is_private
+                ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>`
+                : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
+                
             return `
-                <div class="bg-gray-50 rounded-xl p-3 flex justify-between items-center border border-gray-100">
-                    <div>
-                        <p class="text-sm font-bold text-gray-800">${item.title}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">${item.price} 가치 · ${slotText}</p>
+                <div class="bg-gray-50 rounded-xl p-3 flex flex-col gap-2.5 border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">${item.title}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">${item.price} 가치 · ${slotText}</p>
+                        </div>
+                        <div class="flex gap-1">${closedBadge} ${privateBadge}</div>
                     </div>
-                    <div class="flex flex-col gap-1 items-end">
-                        ${closedBadge}
-                        <button onclick="toggleClosedStatus(${item.id}, ${item.is_closed})" class="text-[10px] text-gray-400 underline hover:text-pink-500">
-                            ${item.is_closed ? '마감 해제' : '슬롯 마감'}
-                        </button>
+                    <div class="flex justify-between items-center pt-2 border-t border-dashed border-gray-200">
+                        <div class="flex gap-2">
+                            <button onclick="closeModal('myTypesModal'); if(typeof setupEditMode === 'function') setupEditMode(${JSON.stringify(item).replace(/"/g, '&quot;')});" class="text-[11px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg font-bold hover:bg-blue-100">✏️ 타입 수정</button>
+                            <button onclick="if(typeof handleDeleteCommission === 'function') handleDeleteCommission(${item.id}, '${item.title}')" class="text-[11px] bg-red-50 text-red-500 px-2.5 py-1 rounded-lg font-bold hover:bg-red-100">🗑️ 삭제</button>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="toggleClosedStatus(${item.id}, ${item.is_closed})" class="text-[10px] text-gray-500 underline hover:text-pink-500">${item.is_closed ? '마감 해제' : '슬롯 마감'}</button>
+                            <button onclick="togglePrivateStatus(${item.id}, ${item.is_private})" class="text-[10px] text-gray-500 underline hover:text-purple-500">${item.is_private ? '공개 전환' : '비공개 전환'}</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -205,15 +214,33 @@ async function toggleClosedStatus(id, currentStatus) {
     }
 }
 
-// 정보 수정 모달 열기
+// 비공개/공개 토글
+async function togglePrivateStatus(id, currentStatus) {
+    try {
+        const { error } = await getSupabase()
+            .from('commissions')
+            .update({ is_private: !currentStatus })
+            .eq('id', id)
+            .eq('user_id', window.currentUserId);
+        if (error) throw error;
+        
+        await openMyTypes();
+        if (typeof fetchCommissions === 'function') fetchCommissions();
+    } catch (err) {
+        alert("비공개 상태 변경 실패: " + err.message);
+    }
+}
+
+// 정보 수정 모달 열기 (🌟 응답 시간 연동 바인딩 패치 완료)
 async function openEditProfile() {
     closeModal('profileMenuModal');
     try {
         const { data: profile } = await getSupabase()
-            .from('profiles').select('username, contact_info').eq('id', window.currentUserId).maybeSingle();
+            .from('profiles').select('username, contact_info, response_time').eq('id', window.currentUserId).maybeSingle();
         if (profile) {
             document.getElementById('editUsername').value = profile.username || '';
             document.getElementById('editContact').value = profile.contact_info || '';
+            document.getElementById('editResponseTime').value = profile.response_time || ''; // 응답시간 동기화
         }
         document.getElementById('editPassword').value = '';
         openModal('editProfileModal');
@@ -222,11 +249,12 @@ async function openEditProfile() {
     }
 }
 
-// 정보 수정 저장
+// 정보 수정 저장 (🌟 response_time 칼럼 주입)
 async function handleEditProfile(e) {
     e.preventDefault();
     const newUsername = document.getElementById('editUsername').value.trim();
     const newContact = document.getElementById('editContact').value.trim();
+    const newResponseTime = document.getElementById('editResponseTime').value.trim(); // 응답시간 텍스트 추출
     const newPassword = document.getElementById('editPassword').value;
 
     try {
@@ -236,9 +264,10 @@ async function handleEditProfile(e) {
             if (existing) return alert("이미 다른 유저가 사용 중인 닉네임입니다!");
         }
 
+        // profiles 테이블 업데이트 (⏰ response_time 연동 완성!)
         const { error: profError } = await getSupabase()
             .from('profiles')
-            .update({ username: newUsername, contact_info: newContact })
+            .update({ username: newUsername, contact_info: newContact, response_time: newResponseTime })
             .eq('id', window.currentUserId);
         if (profError) throw profError;
 
