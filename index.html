@@ -555,6 +555,17 @@
                     if (typeof fetchCommissions === 'function') fetchCommissions();
                 });
             }
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', (e) => {
+                    if (window.currentUserId) {
+                        e.stopPropagation();
+                        if (typeof openArtistProfile === 'function') {
+                            openArtistProfile(window.currentUserId); // 내 고유 ID를 전달해 내 프로필 스크랩 카드 활성화!
+                        }
+                    }
+                });
+            }
         });
     </script>
 </body>
