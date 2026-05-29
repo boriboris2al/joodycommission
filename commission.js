@@ -30,7 +30,6 @@ async function fetchCommissions() {
             query = query.ilike('title', `%${currentSearch}%`);
         }
 
-        // 단일 필터 (전체 버튼)
         if (currentFilter !== '전체') {
             query = query.contains('tags', [currentFilter]);
         }
@@ -38,7 +37,6 @@ async function fetchCommissions() {
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
-        // 다중 태그 필터 클라이언트 측 적용
         let visibleData = data.filter(item => {
             if (item.is_private === true) {
                 return window.currentUserId && window.currentUserId === item.user_id;
@@ -68,8 +66,6 @@ async function fetchCommissions() {
             }
             
             const privateBadge = item.is_private ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>` : '';
-
-            // 마감 시 어두운 오버레이 + 자물쇠 아이콘
             const closedOverlay = item.is_closed ? `
                 <div class="absolute inset-0 bg-black/50 z-10 pointer-events-none flex flex-col items-center justify-center gap-1">
                     <span style="font-size:2rem;">🔒</span>
@@ -107,7 +103,6 @@ async function fetchCommissions() {
 
 // 전체 버튼 (단일 필터 초기화)
 function changeFilter(target, filterName) {
-    // 전체 누르면 태그 필터도 초기화
     currentActiveTags = [];
     renderTagDropdowns();
 
@@ -127,13 +122,12 @@ function toggleTagFilter(tag) {
     } else {
         currentActiveTags.push(tag);
     }
-    // 전체 버튼 비활성화
     currentFilter = '전체';
     renderTagDropdowns();
     fetchCommissions();
 }
 
-// 드롭다운 버튼 렌더링 (선택 상태 반영)
+// 드롭다운 버튼 렌더링
 function renderTagDropdowns() {
     const categories = [
         { label: '화풍', tags: ['SD', 'LD'] },
@@ -152,7 +146,7 @@ function renderTagDropdowns() {
         panel.innerHTML = cat.tags.map(tag => {
             const active = currentActiveTags.includes(tag);
             return `<button onclick="toggleTagFilter('${tag}')" class="${active
-                ? 'bg-pink-500 text-white border-pink-500'
+                ? 'bg-pink-500 text-white border-pink-500 font-bold'
                 : 'bg-white text-gray-600 border-gray-200 hover:border-pink-300'
             } border text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap transition font-medium">#${tag}</button>`;
         }).join('');
@@ -191,7 +185,6 @@ async function handleCreateCommission(e) {
     if (!user || window.currentUserRole === 'applicant') return alert("작성 권한이 없습니다.");
 
     const editId = document.getElementById('editCommissionId').value;
-
     const title = document.getElementById('commTitle').value;
     const price = parseFloat(document.getElementById('commPrice').value);
     const slot_type = document.getElementById('commSlot').value;
@@ -360,49 +353,63 @@ async function openDetail(id) {
     } catch (error) { alert('상세 정보를 불러오지 못했습니다: ' + error.message); }
 }
 
-// 이미지 풀스크린 뷰어 팝업
+// 👑 [수정 연산] 화살표 클릭 없이 손가락 스와이프로 슥슥 넘겨보는 특제 풀스크린 뷰어 엔진
 function openImageViewer(images, startIdx) {
     const existing = document.getElementById('imageViewerOverlay');
     if (existing) existing.remove();
 
-    let current = startIdx;
-
     const overlay = document.createElement('div');
     overlay.id = 'imageViewerOverlay';
+    // 요구사항 2: 레이어 서열 순서 50000 최상단 강제 수직 상승
     overlay.style.cssText = `
-        position: fixed; inset: 0; background: rgba(0,0,0,0.93);
-        z-index: 9999; display: flex; flex-direction: column;
-        justify-content: center; align-items: center;
-        padding: 16px;
+        position: fixed; inset: 0; background: rgba(0,0,0,0.96);
+        z-index: 50000 !important; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; overflow: hidden;
     `;
 
-    function render() {
-        overlay.innerHTML = `
-            <button id="viewerCloseBtn"
-                style="position:absolute; top:16px; right:16px; color:white; font-size:26px;
-                       background:rgba(255,255,255,0.15); border:none; cursor:pointer;
-                       z-index:10000; width:40px; height:40px; border-radius:50%;
-                       display:flex; align-items:center; justify-content:center; line-height:1;">✕</button>
-            <div style="display:flex; align-items:center; gap:8px; width:100%; max-width:420px; justify-content:center;">
-                ${images.length > 1 ? `<button id="viewerPrev" style="color:white; font-size:36px; background:rgba(255,255,255,0.15); border:none; cursor:pointer; flex-shrink:0; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:2px;">‹</button>` : '<div style="width:40px;"></div>'}
-                <img src="${images[current].trim()}" style="flex:1; max-width:100%; max-height:78vh; object-fit:contain; border-radius:12px; display:block;">
-                ${images.length > 1 ? `<button id="viewerNext" style="color:white; font-size:36px; background:rgba(255,255,255,0.15); border:none; cursor:pointer; flex-shrink:0; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:2px;">›</button>` : '<div style="width:40px;"></div>'}
-            </div>
-            ${images.length > 1 ? `<p style="color:rgba(255,255,255,0.5); font-size:12px; margin-top:14px; font-family: sans-serif;">${current + 1} / ${images.length}</p>` : ''}
-        `;
+    // 스냅 가로 스크롤 및 스와이프를 지원하는 슬라이더 구조 이식
+    overlay.innerHTML = `
+        <button id="viewerCloseBtn"
+            style="position:absolute; top:16px; right:16px; color:white; font-size:26px;
+                   background:rgba(255,255,255,0.2); border:none; cursor:pointer;
+                   z-index:52000; width:40px; height:40px; border-radius:50%;
+                   display:flex; align-items:center; justify-content:center; line-height:1; backdrop-filter:blur(4px);">✕</button>
+        
+        <div id="viewerSliderContainer" 
+             style="display:flex; width:100%; height:82vh; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch;" 
+             class="scrollbar-none">
+            ${images.map(url => `
+                <div style="width:100%; height:100%; flex-shrink:0; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; padding:0 8px;">
+                    <img src="${url.trim()}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px; pointer-events:none;">
+                </div>
+            `).join('')}
+        </div>
+        
+        ${images.length > 1 ? `<p id="viewerIndicator" style="color:rgba(255,255,255,0.6); font-size:13px; font-weight:bold; margin-top:12px; font-family:sans-serif; letter-spacing:1px; z-index:52000;">${startIdx + 1} / ${images.length}</p>` : ''}
+    `;
 
-        const closeBtn = overlay.querySelector('#viewerCloseBtn');
-        if (closeBtn) closeBtn.onclick = () => overlay.remove();
+    document.body.appendChild(overlay);
 
-        const prevBtn = overlay.querySelector('#viewerPrev');
-        if (prevBtn) prevBtn.onclick = (e) => { e.stopPropagation(); current = (current - 1 + images.length) % images.length; render(); };
+    const slider = overlay.querySelector('#viewerSliderContainer');
+    const indicator = overlay.querySelector('#viewerIndicator');
 
-        const nextBtn = overlay.querySelector('#viewerNext');
-        if (nextBtn) nextBtn.onclick = (e) => { e.stopPropagation(); current = (current + 1) % images.length; render(); };
+    // 사용자가 지정한 시작 위치로 슬라이더 첫 좌표 동기화 배정
+    if (slider) {
+        setTimeout(() => {
+            slider.scrollLeft = slider.clientWidth * startIdx;
+        }, 10);
+
+        // 손가락 터치/스와이프로 옆으로 밀었을 때 실시간 페이지 숫자 연산 바인딩
+        slider.onscroll = () => {
+            if (indicator) {
+                const page = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+                indicator.innerText = `${page} / ${images.length}`;
+            }
+        };
     }
 
-    render();
-    document.body.appendChild(overlay);
+    const closeBtn = overlay.querySelector('#viewerCloseBtn');
+    if (closeBtn) closeBtn.onclick = () => overlay.remove();
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) overlay.remove();
@@ -547,11 +554,9 @@ async function handleCreateReview(e) {
     e.preventDefault();
     const { data: { user } } = await window.supabaseClient.auth.getUser();
     if (!user) return alert("로그인 후 이용 가능합니다.");
-
     const commissionId = document.getElementById('targetCommissionId').value;
     const rating = parseInt(document.getElementById('reviewRating').value);
     const content = document.getElementById('reviewContent').value;
-
     try {
         const { error } = await window.supabaseClient.from('reviews').insert([{ commission_id: commissionId, writer_id: user.id, rating: rating, content: content }]);
         if (error) throw error;
@@ -566,23 +571,20 @@ async function openMyTypes() {
     closeModal('profileMenuModal');
     const container = document.getElementById('myTypesList');
     if (!container) return;
-    
+        
     container.innerHTML = "<p class='text-xs text-gray-400 text-center py-4'>불러오는 중...</p>";
     openModal('myTypesModal');
-
     try {
-        const { data, error } = await getSupabase()
+        const { data, error } = await window.supabaseClient
             .from('commissions')
             .select('id, title, price, slot_type, is_closed, is_private')
             .eq('user_id', window.currentUserId)
             .order('created_at', { ascending: false });
         if (error) throw error;
-
         if (data.length === 0) {
             container.innerHTML = "<p class='text-xs text-gray-400 py-6 text-center'>등록한 커미션 타입이 없습니다.</p>";
             return;
         }
-
         container.innerHTML = data.map(item => {
             const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}개`;
             const closedBadge = item.is_closed
@@ -591,7 +593,6 @@ async function openMyTypes() {
             const privateBadge = item.is_private
                 ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>`
                 : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
-
             return `
                 <div class="bg-gray-50 rounded-xl p-3 flex justify-between items-center border border-gray-100">
                     <div>
@@ -619,7 +620,7 @@ async function openMyTypes() {
 // 슬롯 마감/해제 토글
 async function toggleClosedStatus(id, currentStatus) {
     try {
-        const { error } = await getSupabase()
+        const { error } = await window.supabaseClient
             .from('commissions')
             .update({ is_closed: !currentStatus })
             .eq('id', id)
@@ -635,7 +636,7 @@ async function toggleClosedStatus(id, currentStatus) {
 // 비공개/공개 토글
 async function togglePrivateStatus(id, currentStatus) {
     try {
-        const { error } = await getSupabase()
+        const { error } = await window.supabaseClient
             .from('commissions')
             .update({ is_private: !currentStatus })
             .eq('id', id)
