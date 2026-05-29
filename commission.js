@@ -1,6 +1,6 @@
 // commission.js
 let currentFilter = '전체';
-let currentActiveTags = []; // 다중 태그 필터
+let currentActiveTags = []; 
 let currentSearch = '';
 
 function openRegisterModal() {
@@ -16,7 +16,7 @@ function openRegisterModal() {
     openModal('regModal');
 }
 
-// 1. 메인 화면에 커미션 목록 띄우기 (🌟 슬롯 동적 변환 바인딩)
+// 1. 메인 화면에 커미션 목록 띄우기 (🌟 작가 닉네임 검색 연동 고도화 버전)
 async function fetchCommissions() {
     const listContainer = document.getElementById('commissionList');
     if (!listContainer) return;
@@ -24,10 +24,12 @@ async function fetchCommissions() {
     try {
         let query = window.supabaseClient
             .from('commissions')
-            .select(`id, title, price, slot_type, max_slots, current_slots, tags, image_url, is_closed, is_private, user_id, profiles ( username )`);
+            .select(`id, title, price, slot_type, max_slots, current_slots, tags, image_url, is_closed, is_private, user_id, profiles!inner ( username )`);
 
+        // 🌟 요구사항 3: 글 제목은 물론, 작가 이름(username) 검색어까지 통합 감지 스캔 구현
         if (currentSearch && currentSearch.trim() !== '') {
-            query = query.ilike('title', `%${currentSearch}%`);
+            const cleanSearch = currentSearch.trim();
+            query = query.or(`title.ilike.%${cleanSearch}%, profiles.username.ilike.%${cleanSearch}%`);
         }
 
         if (currentFilter !== '전체') {
@@ -56,7 +58,6 @@ async function fetchCommissions() {
         }
 
         listContainer.innerHTML = visibleData.map(item => {
-            // 🌟 슬롯 변환 처리: limited 기조일 때 사용자가 입력한 현재/최대 데이터 주입
             const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`);
             const slotColor = item.is_closed ? 'bg-gray-200 text-gray-600' : 'bg-pink-50 text-pink-500';
             const tagsHTML = item.tags ? item.tags.map(tag => `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`).join(' ') : '';
@@ -84,8 +85,8 @@ async function fetchCommissions() {
                     </div>
                     <div class="p-3.5 space-y-1.5">
                         <div class="flex justify-between items-center">
-                            <div class="flex items-center gap-1">
-                                <span class="text-xs text-gray-400 font-medium">✨ ${item.profiles?.username || '알 수 없음'}</span>
+                            <div class="flex items-center gap-1" onclick="event.stopPropagation(); openArtistProfile('${item.user_id}')">
+                                <span class="text-xs text-pink-600 font-bold hover:underline">✨ ${item.profiles?.username || '알 수 없음'}</span>
                                 ${privateBadge}
                             </div>
                             <span class="text-[11px] font-semibold ${slotColor} px-2 py-0.5 rounded-full">${slotText}</span>
@@ -102,7 +103,6 @@ async function fetchCommissions() {
     }
 }
 
-// 전체 버튼
 function changeFilter(target, filterName) {
     currentActiveTags = [];
     renderTagDropdowns();
@@ -115,7 +115,6 @@ function changeFilter(target, filterName) {
     fetchCommissions();
 }
 
-// 태그 토글
 function toggleTagFilter(tag) {
     if (currentActiveTags.includes(tag)) {
         currentActiveTags = currentActiveTags.filter(t => t !== tag);
@@ -127,7 +126,6 @@ function toggleTagFilter(tag) {
     fetchCommissions();
 }
 
-// 드롭다운 렌더링
 function renderTagDropdowns() {
     const categories = [
         { label: '화풍', tags: ['SD', 'LD'] },
@@ -153,7 +151,6 @@ function renderTagDropdowns() {
     });
 }
 
-// 드롭다운 열기
 function toggleDropdown(label) {
     const categories = ['화풍', '틀 종류', '채색', '구도', '기타'];
     categories.forEach(cat => {
@@ -177,7 +174,7 @@ function toggleDropdown(label) {
     });
 }
 
-// 2. 새 커미션 등록 및 수정 로직 (🌟 슬롯 데이터 Payload 가공 처리 분할 주입)
+// 2. 새 커미션 등록 및 수정하기 로직
 async function handleCreateCommission(e) {
     e.preventDefault();
     
@@ -188,7 +185,6 @@ async function handleCreateCommission(e) {
     const title = document.getElementById('commTitle').value;
     const price = parseFloat(document.getElementById('commPrice').value);
     
-    // 슬롯 기믹 데이터 구조 확보
     const slot_type = document.getElementById('commSlotType').value;
     const max_slots = parseInt(document.getElementById('commMaxSlots').value) || 5;
     const current_slots = parseInt(document.getElementById('commCurrentSlots').value) || 0;
@@ -296,11 +292,13 @@ async function openDetail(id) {
 
         document.getElementById('detailPrice').innerText = `${item.price} 가치`;
         document.getElementById('detailTitle').innerText = item.title;
-        document.getElementById('detailArtist').innerText = `✨ 작가: ${item.profiles?.username || '알 수 없음'}`;
         
-        // 🌟 상세보기 모달 내 슬롯 출력 문자열 교정
+        // 🌟 요구사항 2: 상세보기 내 작가명 마킹 및 이벤트 이식
+        const artistEl = document.getElementById('detailArtist');
+        artistEl.innerText = `✨ 작가: ${item.profiles?.username || '알 수 없음'}`;
+        artistEl.onclick = () => { closeModal('detailModal'); openArtistProfile(item.user_id); };
+
         document.getElementById('detailSlot').innerText = item.is_closed ? '슬롯 마감됨' : (item.slot_type === 'always' ? '상시 운영' : `남은 슬롯: ${item.current_slots || 0}/${item.max_slots || 5}개`);
-        
         document.getElementById('detailItem').innerText = item.item_wanted || '없음';
         document.getElementById('detailCredit').innerText = item.credit_rule || '자유롭게 표기 가능';
         document.getElementById('detailDesc').innerText = item.description || '상세 설명이 없습니다.';
@@ -359,6 +357,49 @@ async function openDetail(id) {
         fetchReviews(id);
         openModal('detailModal');
     } catch (error) { alert('상세 정보를 불러오지 못했습니다: ' + error.message); }
+}
+
+// 🌟 요구사항 2: 작가 고유 프로필 뷰어 윈도우 개설 연산
+async function openArtistProfile(userId) {
+    try {
+        const { data: profile, error: pErr } = await window.supabaseClient.from('profiles').select('*').eq('id', userId).single();
+        if (pErr) throw pErr;
+
+        document.getElementById('artistNameTitle').innerText = `🎨 ${profile.username} 님의 프로필`;
+        
+        let roleText = "신청자 전용 계정";
+        if(profile.role === 'commissioner') roleText = "커미션 작가";
+        else if(profile.role === 'both') roleText = "멀티 크리에이터";
+        document.getElementById('artistRoleBadge').innerText = roleText;
+
+        // 연락망 및 응답 가능 시간 마킹
+        document.getElementById('artistContactInfo').innerText = profile.contact || '등록된 대화 채널이 없습니다.';
+        document.getElementById('artistResponseTime').innerText = profile.response_time || '지정되지 않음 (언제든 문의해 보세요!)';
+
+        // 해당 작가의 타입 모아보기 정렬 바인딩
+        const { data: list, error: lErr } = await window.supabaseClient.from('commissions').select('*').eq('user_id', userId).eq('is_private', false).order('created_at', { ascending: false });
+        if (lErr) throw lErr;
+
+        const listContainer = document.getElementById('artistCommissionsList');
+        if (list.length === 0) {
+            listContainer.innerHTML = `<p class="text-gray-400 text-center py-4 text-[11px]">현재 모집 중인 대중 공개 타입이 없습니다.</p>`;
+        } else {
+            listContainer.innerHTML = list.map(item => {
+                let img = 'https://via.placeholder.com/350x200?text=No+Image';
+                if (item.image_url) img = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
+                return `
+                    <div class="bg-gray-50 border border-gray-100 rounded-xl overflow-hidden flex gap-2.5 p-2 cursor-pointer" onclick="closeModal('artistProfileModal'); openDetail(${item.id})">
+                        <img src="${img}" class="w-16 h-16 object-cover rounded-lg flex-shrink-0">
+                        <div class="flex-1 min-w-0 flex flex-col justify-center">
+                            <p class="text-xs font-bold text-gray-800 line-clamp-1">${item.title}</p>
+                            <p class="text-[11px] text-pink-500 font-semibold mt-0.5">${item.price} 가치</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        openModal('artistProfileModal');
+    } catch(e) { alert("프로필 로드 실패: " + e.message); }
 }
 
 // 이미지 풀스크린 뷰어 팝업
@@ -423,17 +464,15 @@ function openImageViewer(images, startIdx) {
     document.addEventListener('keydown', escHandler);
 }
 
-// 🌟 수정 폼 양식 로드 시 데이터 역동기화 보장 처리
+// 수정 폼 세팅
 function setupEditMode(item) {
     document.getElementById('editCommissionId').value = item.id;
     document.getElementById('commTitle').value = item.title;
     document.getElementById('commPrice').value = item.price;
     
-    // 수정창 띄울 때 기틀 분배 복구
     const typeSelect = document.getElementById('commSlotType');
     typeSelect.value = item.slot_type || "always";
     
-    // 수동 디스플레이 트리거 발동
     if (item.slot_type === 'limited') {
         document.getElementById('customSlotInputGroup').classList.remove('hidden');
         document.getElementById('commMaxSlots').value = item.max_slots || 5;
@@ -531,13 +570,14 @@ async function fetchBookmarks() {
     } catch (e) { listContainer.innerHTML = `<div class="text-center py-10 text-red-400 text-sm">북마크 로드 실패 ㅠㅠ</div>`; }
 }
 
-// 6. 커미션 글 삭제
+// 6. 커미션 글 삭제 (🌟 무자비한 후기 삭제 경고 알림 트랩 장착 버전)
 async function handleDeleteCommission(id, title) {
-    if (!confirm(`🚨정말 [ ${title} ] 타입을 삭제하시겠습니까?\n삭제된 데이터와 후기는 복구할 수 없습니다.`)) return;
+    if (!confirm(`🚨 경고: 정말 [ ${title} ] 타입을 삭제하시겠습니까?\n지금 삭제하시면 그동안 작성된 소중한 '후기'도 전부 함께 지워집니다. 정말 삭제하시겠습니까?`)) return;
     try {
         const { error } = await window.supabaseClient.from('commissions').delete().eq('id', id).eq('user_id', window.currentUserId);
         if (error) throw error;
-        alert("커미션 타입이 깔끔하게 삭제되었습니다!");
+        alert("커미션 타입과 연동 후기가 깔끔하게 파기되었습니다!");
+        closeModal('myTypesModal');
         closeModal('detailModal');
         fetchCommissions();
     } catch (e) { alert("삭제 실패: " + e.message); }
@@ -583,7 +623,7 @@ async function handleCreateReview(e) {
     } catch (error) { alert('후기 등록 실패: ' + error.message); }
 }
 
-// 9. 내 타입 목록 관리 열기
+// 9. 내 타입 목록 관리 열기 (🌟 관리창 내 수정 및 경고 삭제 액션 컴포넌트 실장)
 async function openMyTypes() {
     closeModal('profileMenuModal');
     const container = document.getElementById('myTypesList');
@@ -611,20 +651,24 @@ async function openMyTypes() {
                 ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>`
                 : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
             return `
-                <div class="bg-gray-50 rounded-xl p-3 flex justify-between items-center border border-gray-100">
-                    <div>
-                        <p class="text-sm font-bold text-gray-800">${item.title}</p>
-                        <p class="text-xs text-gray-400 mt-0.5">${item.price} 가치 · ${slotText}</p>
+                <div class="bg-gray-50 rounded-xl p-3 flex flex-col gap-2.5 border border-gray-100">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-bold text-gray-800">${item.title}</p>
+                            <p class="text-xs text-gray-400 mt-0.5">${item.price} 가치 · ${slotText}</p>
+                        </div>
+                        <div class="flex gap-1">${closedBadge} ${privateBadge}</div>
                     </div>
-                    <div class="flex flex-col gap-1 items-end">
-                        ${closedBadge}
-                        <button onclick="toggleClosedStatus(${item.id}, ${item.is_closed})" class="text-[10px] text-gray-400 underline hover:text-pink-500">
-                            ${item.is_closed ? '마감 해제' : '슬롯 마감'}
-                        </button>
-                        ${privateBadge}
-                        <button onclick="togglePrivateStatus(${item.id}, ${item.is_private})" class="text-[10px] text-gray-400 underline hover:text-purple-500">
-                            ${item.is_private ? '공개로 전환' : '비공개로 전환'}
-                        </button>
+                    <!-- 🌟 내 타입 관리 대시보드 내 다이렉트 편집 액션 버튼 라인 신설 -->
+                    <div class="flex justify-between items-center pt-2 border-t border-dashed border-gray-200">
+                        <div class="flex gap-2">
+                            <button onclick="closeModal('myTypesModal'); setupEditMode(${JSON.stringify(item).replace(/"/g, '&quot;')});" class="text-[11px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg font-bold hover:bg-blue-100">✏️ 타입 수정</button>
+                            <button onclick="handleDeleteCommission(${item.id}, '${item.title}')" class="text-[11px] bg-red-50 text-red-500 px-2.5 py-1 rounded-lg font-bold hover:bg-red-100">🗑️ 삭제</button>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="toggleClosedStatus(${item.id}, ${item.is_closed})" class="text-[10px] text-gray-500 underline hover:text-pink-500">${item.is_closed ? '마감 해제' : '슬롯 마감'}</button>
+                            <button onclick="togglePrivateStatus(${item.id}, ${item.is_private})" class="text-[10px] text-gray-500 underline hover:text-purple-500">${item.is_private ? '공개 전환' : '비공개 전환'}</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -637,31 +681,19 @@ async function openMyTypes() {
 // 슬롯 마감/해제 토글
 async function toggleClosedStatus(id, currentStatus) {
     try {
-        const { error } = await window.supabaseClient
-            .from('commissions')
-            .update({ is_closed: !currentStatus })
-            .eq('id', id)
-            .eq('user_id', window.currentUserId);
+        const { error } = await window.supabaseClient.from('commissions').update({ is_closed: !currentStatus }).eq('id', id).eq('user_id', window.currentUserId);
         if (error) throw error;
         await openMyTypes();
         if (typeof fetchCommissions === 'function') fetchCommissions();
-    } catch (err) {
-        alert("상태 변경 실패: " + err.message);
-    }
+    } catch (err) { alert("상태 변경 실패: " + err.message); }
 }
 
 // 비공개/공개 토글
 async function togglePrivateStatus(id, currentStatus) {
     try {
-        const { error } = await window.supabaseClient
-            .from('commissions')
-            .update({ is_private: !currentStatus })
-            .eq('id', id)
-            .eq('user_id', window.currentUserId);
+        const { error } = await window.supabaseClient.from('commissions').update({ is_private: !currentStatus }).eq('id', id).eq('user_id', window.currentUserId);
         if (error) throw error;
         await openMyTypes();
         if (typeof fetchCommissions === 'function') fetchCommissions();
-    } catch (err) {
-        alert("비공개 상태 변경 실패: " + err.message);
-    }
+    } catch (err) { alert("비공개 상태 변경 실패: " + err.message); }
 }
