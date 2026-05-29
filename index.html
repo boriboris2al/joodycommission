@@ -107,18 +107,16 @@
         <main class="flex-1 p-4 pb-20 overflow-x-hidden">
             <!-- 검색바 -->
             <div id="searchBar" class="mb-4">
-                <input type="text" id="searchInput" placeholder="타입 이름으로 검색..." class="w-full p-3 rounded-2xl bg-white border border-gray-200 text-sm shadow-sm focus:outline-none focus:border-pink-300">
+                <input type="text" id="searchInput" placeholder="타입 이름 또는 작가 이름 검색..." class="w-full p-3 rounded-2xl bg-white border border-gray-200 text-sm shadow-sm focus:outline-none focus:border-pink-300">
             </div>
             
             <!-- 🗂️ 5대 카테고리 드롭다운 바 구역 -->
             <div class="mb-5 space-y-2 dropdown-container-box">
-                <!-- 상단 메인 기틀 필터 -->
                 <div class="flex gap-2 items-center">
                     <button onclick="changeFilter(this, '전체')" class="bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition text-xs">전체보기 🔄</button>
                     <span class="text-xs text-gray-400 font-bold px-1">| 카테고리 선택:</span>
                 </div>
                 
-                <!-- 드롭다운 버튼 5형제 -->
                 <div class="flex flex-wrap gap-1.5 pt-1">
                     <div id="dropdown-화풍" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('화풍')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
@@ -201,7 +199,7 @@
         </div>
     </div>
 
-    <!-- 2. 커미션 등록/수정 통합 모달 (🌟 슬롯 분할 인풋 시스템 장착) -->
+    <!-- 2. 커미션 등록/수정 통합 모달 -->
     <div id="regModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl">
             <button onclick="closeModal('regModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -219,7 +217,6 @@
                         </select>
                     </div>
 
-                    <!-- 🌟 요구사항 반영: 슬롯 제한제 선택 시 유기적으로 나타나는 최대/현재 세부 슬롯 선택 필드 -->
                     <div id="customSlotInputGroup" class="hidden flex gap-2 p-3 bg-pink-50/40 rounded-xl border border-pink-100">
                         <div class="w-1/2">
                             <label class="text-[11px] font-bold text-gray-500 block mb-1">현재 찬 슬롯</label>
@@ -272,7 +269,7 @@
         </div>
     </div>
 
-    <!-- 상세 모달 -->
+    <!-- 🔍 3. 커미션 상세 모달 -->
     <div id="detailModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-2xl">
             <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
@@ -292,7 +289,8 @@
 
             <div class="border-b border-gray-100 pb-3">
                 <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
-                    <span id="detailArtist"></span>
+                    <!-- 🌟 작가 이름 클릭 시 고유 프로필로 라우팅되도록 스타일링 튜닝 -->
+                    <span id="detailArtist" class="cursor-pointer font-bold text-pink-600 hover:underline"></span>
                     <span id="detailSlot" class="font-bold text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full"></span>
                 </div>
                 <h2 id="detailTitle" class="text-base font-bold text-gray-900"></h2>
@@ -335,13 +333,40 @@
         </div>
     </div>
 
+    <!-- 👤 2. [신규 추가] 타인 및 작가 프로필 상세 보기 모달 포맷 구역 -->
+    <div id="artistProfileModal" class="modal">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl space-y-4">
+            <button onclick="closeModal('artistProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
+            <div class="text-center border-b border-gray-100 pb-3 space-y-1">
+                <h2 id="artistNameTitle" class="text-lg font-bold text-gray-900">🎨 작가 프로필</h2>
+                <p id="artistRoleBadge" class="text-[10px] bg-pink-50 text-pink-500 inline-block px-2.5 py-0.5 rounded-full font-bold"></p>
+            </div>
+            
+            <div class="space-y-2 text-xs">
+                <div class="bg-gray-50 p-3 rounded-xl space-y-1">
+                    <p class="font-bold text-gray-500">💬 소통 연락처</p>
+                    <p id="artistContactInfo" class="text-gray-700 font-medium break-all select-all"></p>
+                </div>
+                <div class="bg-purple-50 p-3 rounded-xl space-y-1">
+                    <p class="font-bold text-purple-600">⏰ 응답 가능 시간</p>
+                    <p id="artistResponseTime" class="text-gray-700 font-medium"></p>
+                </div>
+            </div>
+
+            <div class="space-y-2 pt-2">
+                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 이 작가의 다른 타입들</h3>
+                <div id="artistCommissionsList" class="flex flex-col gap-4"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- 4. 프로필 메뉴 모달 -->
     <div id="profileMenuModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
             <h2 class="text-lg font-bold text-gray-900 mb-4">내 계정</h2>
             <div class="space-y-2">
-                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 커미션 관리 (수정/비공개/마감)</button>
+                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 커미션 관리 (수정/비공개/마감/삭제)</button>
                 <button onclick="openEditProfile()" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm transition">✏️ 정보 수정</button>
                 <button onclick="closeModal('profileMenuModal'); if(confirm('로그아웃 하시겠습니까?')) handleLogout();" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-500 font-semibold p-3.5 rounded-xl text-sm transition">🚪 로그아웃</button>
             </div>
@@ -357,7 +382,7 @@
         </div>
     </div>
 
-    <!-- 6. 정보 수정 모달 -->
+    <!-- 6. 정보 수정 모달 (🌟 응답 시간 설정 칸 내장 보강) -->
     <div id="editProfileModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('editProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -371,6 +396,11 @@
                     <div>
                         <label class="text-xs font-semibold text-gray-500 block mb-1">연락망</label>
                         <input type="text" id="editContact" placeholder="오픈채팅 링크 또는 닉네임" class="w-full p-3 rounded-xl border border-gray-200">
+                    </div>
+                    <!-- 🌟 응답 시간 설정 신규 인풋 -->
+                    <div>
+                        <label class="text-xs font-semibold text-gray-500 block mb-1">⏰ 응답 가능 시간</label>
+                        <input type="text" id="editResponseTime" placeholder="예: 평일 18시~23시 / 주말 상시 대기" class="w-full p-3 rounded-xl border border-gray-200">
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-gray-500 block mb-1">새 비밀번호 (변경 시에만 입력)</label>
@@ -390,14 +420,10 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // 모집방식 선택에 따른 슬롯 인풋박스 노출 제어 센서
         function toggleSlotInputDisplay(val) {
             const group = document.getElementById('customSlotInputGroup');
-            if (val === 'limited') {
-                group.classList.remove('hidden');
-            } else {
-                group.classList.add('hidden');
-            }
+            if (val === 'limited') { group.classList.remove('hidden'); } 
+            else { group.classList.add('hidden'); }
         }
 
         window.addEventListener('click', function(e) {
@@ -439,7 +465,7 @@
             const categories = [
                 { label: '화풍', defaultName: 'SD/LD', icon: '🎨', tags: ['SD', 'LD'] },
                 { label: '틀 종류', defaultName: '고정틀/자유', icon: '🖼️', tags: ['고정틀', '반고정틀', '자유'] },
-                { label: '채색', defaultName: '채색', icon: '✨', tags: ['낙서', '선화', '단색', '풀채색'] },
+                { label: '채색', defaultName: '채색', icon: '✨', tags: ['낙서', '선화', '단색', 'full채색', '풀채색'] },
                 { label: '구도', defaultName: '구도', icon: '👤', tags: ['두상', '흉상', '반신', '전신'] },
                 { label: '기타', defaultName: '기타', icon: '🎁', tags: ['캐디', '기타'] },
             ];
