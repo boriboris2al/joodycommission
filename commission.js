@@ -16,15 +16,15 @@ function openRegisterModal() {
     openModal('regModal');
 }
 
-// 1. 메인 화면에 커미션 목록 띄우기
+// 1. 메인 화면에 커미션 목록 띄우기 (🌟 슬롯 동적 변환 바인딩)
 async function fetchCommissions() {
     const listContainer = document.getElementById('commissionList');
     if (!listContainer) return;
-    
+        
     try {
         let query = window.supabaseClient
             .from('commissions')
-            .select(`id, title, price, slot_type, tags, image_url, is_closed, is_private, user_id, profiles ( username )`);
+            .select(`id, title, price, slot_type, max_slots, current_slots, tags, image_url, is_closed, is_private, user_id, profiles ( username )`);
 
         if (currentSearch && currentSearch.trim() !== '') {
             query = query.ilike('title', `%${currentSearch}%`);
@@ -56,15 +56,16 @@ async function fetchCommissions() {
         }
 
         listContainer.innerHTML = visibleData.map(item => {
-            const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}/5`);
+            // 🌟 슬롯 변환 처리: limited 기조일 때 사용자가 입력한 현재/최대 데이터 주입
+            const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`);
             const slotColor = item.is_closed ? 'bg-gray-200 text-gray-600' : 'bg-pink-50 text-pink-500';
             const tagsHTML = item.tags ? item.tags.map(tag => `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`).join(' ') : '';
-            
+                        
             let firstImg = 'https://via.placeholder.com/350x200?text=No+Image';
             if (item.image_url) {
                 firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
             }
-            
+                        
             const privateBadge = item.is_private ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>` : '';
             const closedOverlay = item.is_closed ? `
                 <div class="absolute inset-0 bg-black/50 z-10 pointer-events-none flex flex-col items-center justify-center gap-1">
@@ -101,11 +102,10 @@ async function fetchCommissions() {
     }
 }
 
-// 전체 버튼 (단일 필터 초기화)
+// 전체 버튼
 function changeFilter(target, filterName) {
     currentActiveTags = [];
     renderTagDropdowns();
-
     const buttons = target.parentElement.querySelectorAll('button');
     buttons.forEach(btn => {
         btn.className = "bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition text-xs";
@@ -115,7 +115,7 @@ function changeFilter(target, filterName) {
     fetchCommissions();
 }
 
-// 드롭다운 태그 필터 토글
+// 태그 토글
 function toggleTagFilter(tag) {
     if (currentActiveTags.includes(tag)) {
         currentActiveTags = currentActiveTags.filter(t => t !== tag);
@@ -127,7 +127,7 @@ function toggleTagFilter(tag) {
     fetchCommissions();
 }
 
-// 드롭다운 버튼 렌더링
+// 드롭다운 렌더링
 function renderTagDropdowns() {
     const categories = [
         { label: '화풍', tags: ['SD', 'LD'] },
@@ -147,13 +147,13 @@ function renderTagDropdowns() {
             const active = currentActiveTags.includes(tag);
             return `<button onclick="toggleTagFilter('${tag}')" class="${active
                 ? 'bg-pink-500 text-white border-pink-500 font-bold'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-pink-300'
+                : 'bg-white text-gray-600 border border-gray-200 hover:border-pink-300'
             } border text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap transition font-medium">#${tag}</button>`;
         }).join('');
     });
 }
 
-// 드롭다운 열기/닫기
+// 드롭다운 열기
 function toggleDropdown(label) {
     const categories = ['화풍', '틀 종류', '채색', '구도', '기타'];
     categories.forEach(cat => {
@@ -177,7 +177,7 @@ function toggleDropdown(label) {
     });
 }
 
-// 2. 새 커미션 등록 및 수정하기 로직
+// 2. 새 커미션 등록 및 수정 로직 (🌟 슬롯 데이터 Payload 가공 처리 분할 주입)
 async function handleCreateCommission(e) {
     e.preventDefault();
     
@@ -187,7 +187,12 @@ async function handleCreateCommission(e) {
     const editId = document.getElementById('editCommissionId').value;
     const title = document.getElementById('commTitle').value;
     const price = parseFloat(document.getElementById('commPrice').value);
-    const slot_type = document.getElementById('commSlot').value;
+    
+    // 슬롯 기믹 데이터 구조 확보
+    const slot_type = document.getElementById('commSlotType').value;
+    const max_slots = parseInt(document.getElementById('commMaxSlots').value) || 5;
+    const current_slots = parseInt(document.getElementById('commCurrentSlots').value) || 0;
+
     const description = document.getElementById('commDesc').value;
     const item_wanted = document.getElementById('commItem').value;
     const credit_rule = document.getElementById('commCredit').value;
@@ -225,7 +230,7 @@ async function handleCreateCommission(e) {
         }
 
         const dataPayload = {
-            user_id: user.id, title, price, slot_type, tags, description, item_wanted, credit_rule, contact_info: custom_contact
+            user_id: user.id, title, price, slot_type, max_slots, current_slots, tags, description, item_wanted, credit_rule, contact_info: custom_contact
         };
 
         if (final_image_str !== "") {
@@ -292,7 +297,10 @@ async function openDetail(id) {
         document.getElementById('detailPrice').innerText = `${item.price} 가치`;
         document.getElementById('detailTitle').innerText = item.title;
         document.getElementById('detailArtist').innerText = `✨ 작가: ${item.profiles?.username || '알 수 없음'}`;
-        document.getElementById('detailSlot').innerText = item.is_closed ? '슬롯 마감됨' : (item.slot_type === 'always' ? '상시 운영' : `남은 슬롯: ${item.slot_type}/5개`);
+        
+        // 🌟 상세보기 모달 내 슬롯 출력 문자열 교정
+        document.getElementById('detailSlot').innerText = item.is_closed ? '슬롯 마감됨' : (item.slot_type === 'always' ? '상시 운영' : `남은 슬롯: ${item.current_slots || 0}/${item.max_slots || 5}개`);
+        
         document.getElementById('detailItem').innerText = item.item_wanted || '없음';
         document.getElementById('detailCredit').innerText = item.credit_rule || '자유롭게 표기 가능';
         document.getElementById('detailDesc').innerText = item.description || '상세 설명이 없습니다.';
@@ -353,21 +361,19 @@ async function openDetail(id) {
     } catch (error) { alert('상세 정보를 불러오지 못했습니다: ' + error.message); }
 }
 
-// 👑 [수정 연산] 화살표 클릭 없이 손가락 스와이프로 슥슥 넘겨보는 특제 풀스크린 뷰어 엔진
+// 이미지 풀스크린 뷰어 팝업
 function openImageViewer(images, startIdx) {
     const existing = document.getElementById('imageViewerOverlay');
     if (existing) existing.remove();
 
     const overlay = document.createElement('div');
     overlay.id = 'imageViewerOverlay';
-    // 요구사항 2: 레이어 서열 순서 50000 최상단 강제 수직 상승
     overlay.style.cssText = `
         position: fixed; inset: 0; background: rgba(0,0,0,0.96);
         z-index: 50000 !important; display: flex; flex-direction: column;
         justify-content: center; align-items: center; overflow: hidden;
     `;
 
-    // 스냅 가로 스크롤 및 스와이프를 지원하는 슬라이더 구조 이식
     overlay.innerHTML = `
         <button id="viewerCloseBtn"
             style="position:absolute; top:16px; right:16px; color:white; font-size:26px;
@@ -393,13 +399,11 @@ function openImageViewer(images, startIdx) {
     const slider = overlay.querySelector('#viewerSliderContainer');
     const indicator = overlay.querySelector('#viewerIndicator');
 
-    // 사용자가 지정한 시작 위치로 슬라이더 첫 좌표 동기화 배정
     if (slider) {
         setTimeout(() => {
             slider.scrollLeft = slider.clientWidth * startIdx;
         }, 10);
 
-        // 손가락 터치/스와이프로 옆으로 밀었을 때 실시간 페이지 숫자 연산 바인딩
         slider.onscroll = () => {
             if (indicator) {
                 const page = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
@@ -419,12 +423,25 @@ function openImageViewer(images, startIdx) {
     document.addEventListener('keydown', escHandler);
 }
 
-// 수정 폼 세팅
+// 🌟 수정 폼 양식 로드 시 데이터 역동기화 보장 처리
 function setupEditMode(item) {
     document.getElementById('editCommissionId').value = item.id;
     document.getElementById('commTitle').value = item.title;
     document.getElementById('commPrice').value = item.price;
-    document.getElementById('commSlot').value = item.slot_type;
+    
+    // 수정창 띄울 때 기틀 분배 복구
+    const typeSelect = document.getElementById('commSlotType');
+    typeSelect.value = item.slot_type || "always";
+    
+    // 수동 디스플레이 트리거 발동
+    if (item.slot_type === 'limited') {
+        document.getElementById('customSlotInputGroup').classList.remove('hidden');
+        document.getElementById('commMaxSlots').value = item.max_slots || 5;
+        document.getElementById('commCurrentSlots').value = item.current_slots || 0;
+    } else {
+        document.getElementById('customSlotInputGroup').classList.add('hidden');
+    }
+
     document.getElementById('commItem').value = item.item_wanted || '';
     document.getElementById('commCredit').value = item.credit_rule || '';
     document.getElementById('commContact').value = item.contact_info || '';
@@ -467,7 +484,7 @@ async function fetchBookmarks() {
     try {
         const { data, error } = await window.supabaseClient
             .from('bookmarks')
-            .select(`commission_id, commissions ( id, title, price, slot_type, tags, image_url, is_closed, profiles ( username ) )`)
+            .select(`commission_id, commissions ( id, title, price, slot_type, max_slots, current_slots, tags, image_url, is_closed, profiles ( username ) )`)
             .eq('user_id', window.currentUserId);
             
         if (error) throw error;
@@ -479,7 +496,7 @@ async function fetchBookmarks() {
         listContainer.innerHTML = data.map(bookmark => {
             const item = bookmark.commissions;
             if (!item) return ''; 
-            const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}/5`);
+            const slotText = item.is_closed ? '마감' : (item.slot_type === 'always' ? '상시' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`);
             const slotColor = item.is_closed ? 'bg-gray-200 text-gray-600' : 'bg-pink-50 text-pink-500';
             const tagsHTML = item.tags ? item.tags.map(tag => `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-medium">#${tag}</span>`).join(' ') : '';
             
@@ -566,7 +583,7 @@ async function handleCreateReview(e) {
     } catch (error) { alert('후기 등록 실패: ' + error.message); }
 }
 
-// 9. 내 타입 목록 열기 (비공개 토글 포함)
+// 9. 내 타입 목록 관리 열기
 async function openMyTypes() {
     closeModal('profileMenuModal');
     const container = document.getElementById('myTypesList');
@@ -577,7 +594,7 @@ async function openMyTypes() {
     try {
         const { data, error } = await window.supabaseClient
             .from('commissions')
-            .select('id, title, price, slot_type, is_closed, is_private')
+            .select('id, title, price, slot_type, max_slots, current_slots, is_closed, is_private')
             .eq('user_id', window.currentUserId)
             .order('created_at', { ascending: false });
         if (error) throw error;
@@ -586,7 +603,7 @@ async function openMyTypes() {
             return;
         }
         container.innerHTML = data.map(item => {
-            const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.slot_type}개`;
+            const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}개`;
             const closedBadge = item.is_closed
                 ? `<span class="text-[10px] bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-bold">마감</span>`
                 : `<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">모집중</span>`;
