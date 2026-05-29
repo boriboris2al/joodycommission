@@ -1,8 +1,9 @@
 // commission.js
 const getSupabaseClient = () => window.supabaseClient;
 
+// 🌟 [초핵심] index.html의 입력값과 100% 동기화되도록 전역 검색 변수 바인딩 확실하게 선언!
 window.currentActiveTags = [];
-window.currentSearch = "";
+window.currentSearch = ""; 
 
 function renderContactInfo(contactText) {
     if (!contactText) return `<span class="text-gray-400">등록된 연락망이 없습니다.</span>`;
@@ -77,7 +78,7 @@ function changeFilter(btn, mode) {
     }
 }
 
-// 1. 피드 조회 (🌟 원본 DB 칼럼 매핑 복구)
+// 1. 피드 조회 (🌟 검색 변수 완전 동기화 연동 완료)
 async function fetchCommissions() {
     const listEl = document.getElementById('commissionList');
     if (!listEl) return;
@@ -90,9 +91,10 @@ async function fetchCommissions() {
             .eq('is_private', false)
             .order('created_at', { ascending: false });
 
-        if (window.currentSearch && window.currentSearch.trim() !== "") {
-            const searchVal = window.currentSearch.trim();
-            query = query.or(`title.ilike.%${searchVal}%, profiles.username.ilike.%${searchVal}%`);
+        // 🌟 [수정 핵심부]: index.html에서 꽂아준 변수(window.currentSearch 또는 전역 currentSearch)를 확실하게 검사하고 필터 쿼리 주입
+        const searchKeyword = (window.currentSearch || currentSearch || "").trim();
+        if (searchKeyword !== "") {
+            query = query.or(`title.ilike.%${searchKeyword}%, profiles.username.ilike.%${searchKeyword}%`);
         }
 
         const { data, error } = await query;
@@ -114,7 +116,6 @@ async function fetchCommissions() {
         listEl.innerHTML = filteredData.map(item => {
             const artistName = item.profiles ? item.profiles.username : '알 수 없음';
             
-            // 🌟 image_url 원본 칼럼 맵핑 복구
             let firstImg = 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
             if (item.image_url) {
                 firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
@@ -124,7 +125,7 @@ async function fetchCommissions() {
             const statusBadge = item.is_closed 
                 ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">마감</span>`
                 : `<span class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">모집중</span>`;
-            const tagsHtml = (item.tags && item.tags.length > 0) ? item.tags.map(t => `<span class="bg-gray-100 text-gray-500 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ') : '';
+            const tagsHtml = (item.tags && item.tags.length > 0) ? item.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ') : '';
 
             return `
                 <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col" onclick="openDetailModal(${item.id})">
@@ -186,7 +187,7 @@ async function openArtistProfile(userId) {
     } catch (e) { alert("작가 프로필 로드 실패: " + e.message); }
 }
 
-// 3. 커미션 상세보기 (🌟 원본 DB 칼럼 매핑 복구)
+// 3. 커미션 상세보기
 async function openDetailModal(id) {
     try {
         const { data: item, error } = await getSupabaseClient().from('commissions').select(`*, profiles ( username, contact_info )`).eq('id', id).maybeSingle();
@@ -203,7 +204,6 @@ async function openDetailModal(id) {
         const counter = document.getElementById('detailImgCounter');
         slider.innerHTML = "";
         
-        // 🌟 image_url 다중 파싱 구조 복구
         let imgs = [];
         if (item.image_url) {
             imgs = item.image_url.includes(',') ? item.image_url.split(',') : [item.image_url];
@@ -229,13 +229,13 @@ async function openDetailModal(id) {
         document.getElementById('detailSlot').innerText = item.is_closed ? '🔒 슬롯 마감' : `🔓 ${slotText}`;
 
         document.getElementById('detailTitle').innerText = item.title;
-        document.getElementById('detailItem').innerText = item.item_wanted || '상세내용 없음'; // item_wanted 복구
+        document.getElementById('detailItem').innerText = item.item_wanted || '상세내용 없음';
         document.getElementById('detailDeadline').innerText = item.deadline || '상세 협의 후 결정';
-        document.getElementById('detailCredit').innerText = item.credit_rule || '출처 표기 불필요'; // credit_rule 복구
+        document.getElementById('detailCredit').innerText = item.credit_rule || '출처 표기 불필요';
         document.getElementById('detailDesc').innerText = item.description || '';
 
         const contactBtn = document.getElementById('detailContactBtn');
-        const contactTarget = item.contact_info || (item.profiles ? item.profiles.contact_info : ''); // contact_info 복구
+        const contactTarget = item.contact_info || (item.profiles ? item.profiles.contact_info : '');
         if (contactTarget) {
             contactBtn.innerText = "💬 작가님에게 커미션 신청하기";
             contactBtn.onclick = () => {
@@ -303,7 +303,8 @@ async function fetchBookmarks() {
 async function fetchReviews(commissionId) {
     const container = document.getElementById('reviewList'); if(!container) return; container.innerHTML = "";
     try {
-        const { data, error } = await getSupabaseClient().from('reviews').select(`id, content, rating, created_at, user_id, profiles ( username )`).eq('commission_id', commissionId).order('created_at', { ascending: false });
+        const { data, error } = await getSupabaseClient().from('reviews').select(`id, content, rating, created_at, user_id, profiles ( username )`).eq('commission_id', commissionId)
+        .order('created_at', { ascending: false });
         if (error) throw error;
         if (!data || data.length === 0) { container.innerHTML = "<p class='text-[10px] text-gray-400 py-4 text-center'>첫 후기의 주인공이 되어보세요! ✨</p>"; return; }
         container.innerHTML = data.map(r => {
@@ -338,22 +339,18 @@ function openRegisterModal() {
     openModal('regModal');
 }
 
-// 4. 새 커미션 등록 및 수정 로직 (🌟 원본 DB 칼럼 명칭 완벽 매칭 복구)
 async function handleCreateCommission(e) {
     e.preventDefault();
     const commId = document.getElementById('editCommissionId').value;
-    
     const title = document.getElementById('commTitle').value.trim();
     const price = parseFloat(document.getElementById('commPrice').value) || 0;
     const slot_type = document.getElementById('commSlotType').value;
     const current_slots = parseInt(document.getElementById('commCurrentSlots').value) || 0;
     const max_slots = parseInt(document.getElementById('commMaxSlots').value) || 5;
-    
     const item_wanted = document.getElementById('commItem').value.trim();
     const credit_rule = document.getElementById('commCredit').value.trim();
     const deadline = document.getElementById('commDeadline').value.trim();
     const contact_info = document.getElementById('commContact').value.trim();
-    
     const description = document.getElementById('commDesc').value.trim();
     const fileInput = document.getElementById('commImage');
 
@@ -388,7 +385,6 @@ async function handleCreateCommission(e) {
         } else {
             payload.user_id = window.currentUserId;
             payload.image_url = finalImages.length > 0 ? finalImages.join(',') : 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
-            
             const { error } = await getSupabaseClient().from('commissions').insert([payload]); if (error) throw error;
             alert("새로운 커미션 타입이 등록되었습니다! 🎀");
         }
@@ -397,7 +393,6 @@ async function handleCreateCommission(e) {
     finally { submitBtn.innerText = commId ? "수정 완료" : "등록 완료"; submitBtn.disabled = false; }
 }
 
-// 5. 수정 폼 데이터 복원 (🌟 칼럼 맵핑 원상 복구)
 function setupEditMode(item) {
     document.getElementById('editCommissionId').value = item.id;
     document.getElementById('commTitle').value = item.title || '';
@@ -406,7 +401,6 @@ function setupEditMode(item) {
     toggleSlotInputDisplay(item.slot_type || 'always');
     document.getElementById('commCurrentSlots').value = item.current_slots || 0;
     document.getElementById('commMaxSlots').value = item.max_slots || 5;
-    
     document.getElementById('commItem').value = item.item_wanted || '';
     document.getElementById('commCredit').value = item.credit_rule || '';
     document.getElementById('commDeadline').value = item.deadline || '';
