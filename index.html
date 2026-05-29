@@ -67,58 +67,58 @@
                 <input type="text" id="searchInput" placeholder="타입 이름으로 검색..." class="w-full p-3 rounded-2xl bg-white border border-gray-200 text-sm shadow-sm focus:outline-none focus:border-pink-300">
             </div>
             
-            <div class="mb-4 space-y-2">
+            <div class="mb-5 space-y-2 relative z-30">
                 <div class="flex gap-2 items-center overflow-x-auto pb-1 scrollbar-none">
                     <button onclick="changeFilter(this, '전체')" class="bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition text-xs">전체보기 🔄</button>
                     <span class="text-xs text-gray-400 font-bold px-1">| 카테고리:</span>
                 </div>
                 
-                <div class="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+                <div class="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none relative">
                     <div id="dropdown-화풍" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('화풍')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            🎨 화풍 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">🎨 화풍</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[140px] border-pink-100"></div>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-pink-100 p-2 rounded-2xl shadow-xl z-50 flex gap-1.5 min-w-[140px]"></div>
                     </div>
                     
                     <div id="dropdown-틀 종류" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('틀 종류')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            🖼️ 틀 종류 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">🖼️ 틀 종류</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[200px] border-pink-100"></div>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-pink-100 p-2 rounded-2xl shadow-xl z-50 flex gap-1.5 min-w-[200px]"></div>
                     </div>
 
                     <div id="dropdown-채색" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('채색')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            ✨ 채색 단계 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">✨ 채색 단계</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[240px] border-pink-100"></div>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-pink-100 p-2 rounded-2xl shadow-xl z-50 flex gap-1.5 min-w-[240px]"></div>
                     </div>
 
                     <div id="dropdown-구도" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('구도')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            👤 구도 범위 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">👤 구도 범위</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[240px] border-pink-100"></div>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-pink-100 p-2 rounded-2xl shadow-xl z-50 flex gap-1.5 min-w-[240px]"></div>
                     </div>
 
                     <div id="dropdown-기타" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('기타')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            🎁 기타 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">🎁 기타</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[130px] border-pink-100"></div>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-pink-100 p-2 rounded-2xl shadow-xl z-50 flex gap-1.5 min-w-[130px]"></div>
                     </div>
                 </div>
             </div>
 
-            <div id="commissionList" class="grid grid-cols-1 gap-4"></div>
+            <div id="commissionList" class="flex flex-col gap-5 relative z-10"></div>
         </main>
     </div>
 
     <div id="sectionBookmark" class="flex-1 flex flex-col hidden">
         <main class="flex-1 p-4 pb-20 overflow-x-hidden">
             <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 내가 찜한 커미션</h2>
-            <div id="bookmarkList" class="grid grid-cols-1 gap-4"></div>
+            <div id="bookmarkList" class="flex flex-col gap-5"></div>
         </main>
     </div>
 
@@ -275,7 +275,7 @@
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
             <h2 class="text-lg font-bold text-gray-900 mb-4">내 계정</h2>
             <div class="space-y-2">
-                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 타입 관리 (수정/비공개/마감)</button>
+                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 커미션 관리 (수정/비공개/마감)</button>
                 <button onclick="openEditProfile()" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm transition">✏️ 정보 수정</button>
                 <button onclick="closeModal('profileMenuModal'); if(confirm('로그아웃 하시겠습니까?')) handleLogout();" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-500 font-semibold p-3.5 rounded-xl text-sm transition">🚪 로그아웃</button>
             </div>
@@ -358,10 +358,62 @@
             }
         }
 
+        // 🌟 [수정] 태그 선택 유무에 따라 버튼 이름을 변경하는 실시간 스위칭 헬퍼 기능
+        function updateDropdownButtonsUI() {
+            const categories = [
+                { label: '화풍', icon: '🎨', tags: ['SD', 'LD'] },
+                { label: '틀 종류', icon: '🖼️', tags: ['고정틀', '반고정틀', '자유'] },
+                { label: '채색', icon: '✨', tags: ['낙서', '선화', '단색', '풀채색'] },
+                { label: '구도', icon: '👤', tags: ['두상', '흉상', '반신', '전신'] },
+                { label: '기타', icon: '🎁', tags: ['캐디', '기타'] },
+            ];
+
+            categories.forEach(cat => {
+                const wrapper = document.getElementById(`dropdown-${cat.label}`);
+                if (!wrapper) return;
+                const btnTextEl = wrapper.querySelector('.btn-text');
+                if (!btnTextEl) return;
+
+                // 현재 전역 태그 배열(currentActiveTags) 중 이 카테고리에 할당된 선택 태그가 있는지 교집합 확인
+                const selectedInCat = cat.tags.filter(t => window.currentActiveTags && window.currentActiveTags.includes(t));
+
+                if (selectedInCat.length > 0) {
+                    // 선택된 태그명이 버튼 텍스트로 치환됨!
+                    btnTextEl.innerText = `${cat.icon} ${selectedInCat.join(', ')}`;
+                    btnTextEl.parentElement.classList.add('border-pink-400', 'bg-pink-50/50');
+                } else {
+                    // 선택된 태그가 없으면 원상복구
+                    if (cat.label === '채색') btnTextEl.innerText = `${cat.icon} 채색 단계`;
+                    else if (cat.label === '구도') btnTextEl.innerText = `${cat.icon} 구도 범위`;
+                    else btnTextEl.innerText = `${cat.icon} ${cat.label}`;
+                    btnTextEl.parentElement.classList.remove('border-pink-400', 'bg-pink-50/50');
+                }
+            });
+        }
+
         window.addEventListener('load', () => {
+            // 전역 배열 초기 안전장치 확보
+            if (!window.currentActiveTags) window.currentActiveTags = [];
+
             if (typeof checkUser === 'function') checkUser();
             if (typeof renderTagDropdowns === 'function') renderTagDropdowns();
             if (typeof fetchCommissions === 'function') fetchCommissions();
+
+            // 클로드 로직 함수 프록싱 오버라이딩 (버튼 이름 실시간 가로채기 주입)
+            const originToggleTagFilter = window.toggleTagFilter;
+            if (typeof originToggleTagFilter === 'function') {
+                window.toggleTagFilter = function(tag) {
+                    originToggleTagFilter(tag);
+                    updateDropdownButtonsUI(); // 이름 연동 새로고침
+                };
+            }
+            const originChangeFilter = window.changeFilter;
+            if (typeof originChangeFilter === 'function') {
+                window.changeFilter = function(target, filterName) {
+                    originChangeFilter(target, filterName);
+                    updateDropdownButtonsUI(); // 이름 연동 원상복구
+                };
+            }
 
             const regBtn = document.getElementById('registerTabBtn');
             if (regBtn) {
