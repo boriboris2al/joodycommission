@@ -1,5 +1,6 @@
 // commission.js
 let currentFilter = '전체';
+let currentActiveTags = []; // 다중 태그 필터
 let currentSearch = '';
 
 function openRegisterModal() {
@@ -15,7 +16,7 @@ function openRegisterModal() {
     openModal('regModal');
 }
 
-// 1. 메인 화면에 커미션 목록 띄우기 (비공개 처리된 글은 노출 원천 차단!)
+// 1. 메인 화면에 커미션 목록 띄우기
 async function fetchCommissions() {
     const listContainer = document.getElementById('commissionList');
     if (!listContainer) return;
@@ -29,6 +30,7 @@ async function fetchCommissions() {
             query = query.ilike('title', `%${currentSearch}%`);
         }
 
+        // 단일 필터 (전체 버튼)
         if (currentFilter !== '전체') {
             query = query.contains('tags', [currentFilter]);
         }
@@ -36,13 +38,19 @@ async function fetchCommissions() {
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
-        // 비공개 글 필터링: 본인 글이면 비공개여도 보임
-        const visibleData = data.filter(item => {
+        // 다중 태그 필터 클라이언트 측 적용
+        let visibleData = data.filter(item => {
             if (item.is_private === true) {
                 return window.currentUserId && window.currentUserId === item.user_id;
             }
             return true;
         });
+
+        if (currentActiveTags.length > 0) {
+            visibleData = visibleData.filter(item =>
+                currentActiveTags.every(tag => item.tags && item.tags.includes(tag))
+            );
+        }
 
         if (!visibleData || visibleData.length === 0) {
             listContainer.innerHTML = `<div class="text-center py-10 text-gray-400 text-sm">조건에 맞는 커미션이 없습니다. ㅠㅠ</div>`;
@@ -61,12 +69,19 @@ async function fetchCommissions() {
             
             const privateBadge = item.is_private ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>` : '';
 
+            // 마감 시 어두운 오버레이 + 자물쇠 아이콘
+            const closedOverlay = item.is_closed ? `
+                <div class="absolute inset-0 bg-black/50 z-10 pointer-events-none flex flex-col items-center justify-center gap-1">
+                    <span style="font-size:2rem;">🔒</span>
+                    <span class="text-white font-bold text-sm tracking-wide" style="text-shadow:0 1px 4px rgba(0,0,0,0.7);">슬롯 마감</span>
+                </div>` : '';
+
             return `
                 <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer relative" onclick="openDetail(${item.id})">
-                    ${item.is_closed ? '<div class="absolute inset-0 bg-black/5 z-10 pointer-events-none"></div>' : ''}
                     <div class="h-44 bg-gray-100 relative">
-                        <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
-                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">
+                        <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover${item.is_closed ? ' opacity-60' : ''}">
+                        ${closedOverlay}
+                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs z-20">
                             ${item.price} 가치
                         </span>
                     </div>
@@ -90,14 +105,82 @@ async function fetchCommissions() {
     }
 }
 
+// 전체 버튼 (단일 필터 초기화)
 function changeFilter(target, filterName) {
+    // 전체 누르면 태그 필터도 초기화
+    currentActiveTags = [];
+    renderTagDropdowns();
+
     const buttons = target.parentElement.querySelectorAll('button');
     buttons.forEach(btn => {
-        btn.className = "bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition";
+        btn.className = "bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition text-xs";
     });
-    target.className = "bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition";
+    target.className = "bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition text-xs";
     currentFilter = filterName;
     fetchCommissions();
+}
+
+// 드롭다운 태그 필터 토글
+function toggleTagFilter(tag) {
+    if (currentActiveTags.includes(tag)) {
+        currentActiveTags = currentActiveTags.filter(t => t !== tag);
+    } else {
+        currentActiveTags.push(tag);
+    }
+    // 전체 버튼 비활성화
+    currentFilter = '전체';
+    renderTagDropdowns();
+    fetchCommissions();
+}
+
+// 드롭다운 버튼 렌더링 (선택 상태 반영)
+function renderTagDropdowns() {
+    const categories = [
+        { label: '화풍', tags: ['SD', 'LD'] },
+        { label: '틀 종류', tags: ['고정틀', '반고정틀', '자유'] },
+        { label: '채색', tags: ['낙서', '선화', '단색', '풀채색'] },
+        { label: '구도', tags: ['두상', '흉상', '반신', '전신'] },
+        { label: '기타', tags: ['캐디', '기타'] },
+    ];
+
+    categories.forEach(cat => {
+        const wrapper = document.getElementById(`dropdown-${cat.label}`);
+        if (!wrapper) return;
+        const panel = wrapper.querySelector('.dropdown-panel');
+        if (!panel) return;
+
+        panel.innerHTML = cat.tags.map(tag => {
+            const active = currentActiveTags.includes(tag);
+            return `<button onclick="toggleTagFilter('${tag}')" class="${active
+                ? 'bg-pink-500 text-white border-pink-500'
+                : 'bg-white text-gray-600 border-gray-200 hover:border-pink-300'
+            } border text-[11px] px-2.5 py-1 rounded-full whitespace-nowrap transition font-medium">#${tag}</button>`;
+        }).join('');
+    });
+}
+
+// 드롭다운 열기/닫기
+function toggleDropdown(label) {
+    const categories = ['화풍', '틀 종류', '채색', '구도', '기타'];
+    categories.forEach(cat => {
+        const wrapper = document.getElementById(`dropdown-${cat}`);
+        if (!wrapper) return;
+        const panel = wrapper.querySelector('.dropdown-panel');
+        const arrow = wrapper.querySelector('.dropdown-arrow');
+        if (cat === label) {
+            const isOpen = panel.classList.contains('hidden');
+            if (isOpen) {
+                panel.classList.remove('hidden');
+                if (arrow) arrow.style.transform = 'rotate(180deg)';
+            } else {
+                panel.classList.add('hidden');
+                if (arrow) arrow.style.transform = 'rotate(0deg)';
+            }
+        } else {
+            panel.classList.add('hidden');
+            if (arrow) arrow.style.transform = 'rotate(0deg)';
+        }
+    });
 }
 
 // 2. 새 커미션 등록 및 수정하기 로직
@@ -123,7 +206,7 @@ async function handleCreateCommission(e) {
     if (!custom_contact || !custom_contact.trim()) return alert("신청 연락망을 입력해 주세요!");
 
     const tags = [];
-    const tagIds = ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody'];
+    const tagIds = ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody', 'tagCaddie', 'tagEtc'];
     tagIds.forEach(id => {
         const el = document.getElementById(id);
         if(el && el.checked) tags.push(el.dataset.name);
@@ -195,7 +278,6 @@ async function openDetail(id) {
             images = ['https://via.placeholder.com/350x200?text=No+Image'];
         }
 
-        // 이미지 클릭 시 풀스크린 뷰어 팝업
         sliderContainer.innerHTML = images.map((url, idx) => `
             <div class="w-full h-full flex-shrink-0 snap-center cursor-zoom-in" onclick="openImageViewer(${JSON.stringify(images).replace(/"/g, '&quot;')}, ${idx})">
                 <img src="${url.trim()}" class="w-full h-full object-cover">
@@ -205,7 +287,6 @@ async function openDetail(id) {
         if (images.length > 1) {
             imgCounter.classList.remove('hidden');
             imgCounter.innerText = `👈 가로 슬라이드 넘겨보기 (1/${images.length})`;
-            
             sliderContainer.onscroll = () => {
                 const page = Math.round(sliderContainer.scrollLeft / sliderContainer.clientWidth) + 1;
                 imgCounter.innerText = `👈 가로 슬라이드 넘겨보기 (${page}/${images.length})`;
@@ -281,7 +362,6 @@ async function openDetail(id) {
 
 // 이미지 풀스크린 뷰어 팝업
 function openImageViewer(images, startIdx) {
-    // 이미 열려있으면 제거
     const existing = document.getElementById('imageViewerOverlay');
     if (existing) existing.remove();
 
@@ -311,7 +391,6 @@ function openImageViewer(images, startIdx) {
             ${images.length > 1 ? `<p style="color:rgba(255,255,255,0.5); font-size:12px; margin-top:14px; font-family: sans-serif;">${current + 1} / ${images.length}</p>` : ''}
         `;
 
-        // 버튼 이벤트 재바인딩
         const closeBtn = overlay.querySelector('#viewerCloseBtn');
         if (closeBtn) closeBtn.onclick = () => overlay.remove();
 
@@ -325,17 +404,15 @@ function openImageViewer(images, startIdx) {
     render();
     document.body.appendChild(overlay);
 
-    // 배경(오버레이 자체) 클릭 시 닫기
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) overlay.remove();
     });
 
-    // ESC 키로 닫기
     const escHandler = (e) => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); } };
     document.addEventListener('keydown', escHandler);
 }
 
-// 수정 폼 세팅 (is_private 제거됨)
+// 수정 폼 세팅
 function setupEditMode(item) {
     document.getElementById('editCommissionId').value = item.id;
     document.getElementById('commTitle').value = item.title;
@@ -346,7 +423,7 @@ function setupEditMode(item) {
     document.getElementById('commContact').value = item.contact_info || '';
     document.getElementById('commDesc').value = item.description || '';
 
-    const tagIds = ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody'];
+    const tagIds = ['tagSD', 'tagLD', 'tagFix', 'tagSemi', 'tagFree', 'tagDoodle', 'tagLine', 'tagColor', 'tagFull', 'tagHead', 'tagBust', 'tagHalf', 'tagBody', 'tagCaddie', 'tagEtc'];
     tagIds.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.checked = item.tags && item.tags.includes(el.dataset.name);
@@ -404,12 +481,18 @@ async function fetchBookmarks() {
                 firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
             }
 
+            const closedOverlay = item.is_closed ? `
+                <div class="absolute inset-0 bg-black/50 z-10 pointer-events-none flex flex-col items-center justify-center gap-1">
+                    <span style="font-size:2rem;">🔒</span>
+                    <span class="text-white font-bold text-sm tracking-wide" style="text-shadow:0 1px 4px rgba(0,0,0,0.7);">슬롯 마감</span>
+                </div>` : '';
+
             return `
                 <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-md transition cursor-pointer relative" onclick="openDetail(${item.id})">
-                    ${item.is_closed ? '<div class="absolute inset-0 bg-black/5 z-10 pointer-events-none"></div>' : ''}
                     <div class="h-44 bg-gray-100 relative">
-                        <img src="${firstImg}" class="w-full h-full object-cover">
-                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full">${item.price} 가치</span>
+                        <img src="${firstImg}" class="w-full h-full object-cover${item.is_closed ? ' opacity-60' : ''}">
+                        ${closedOverlay}
+                        <span class="absolute top-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full z-20">${item.price} 가치</span>
                     </div>
                     <div class="p-3.5 space-y-1.5">
                         <div class="flex justify-between items-center">
@@ -542,7 +625,6 @@ async function toggleClosedStatus(id, currentStatus) {
             .eq('id', id)
             .eq('user_id', window.currentUserId);
         if (error) throw error;
-        
         await openMyTypes();
         if (typeof fetchCommissions === 'function') fetchCommissions();
     } catch (err) {
@@ -559,7 +641,6 @@ async function togglePrivateStatus(id, currentStatus) {
             .eq('id', id)
             .eq('user_id', window.currentUserId);
         if (error) throw error;
-        
         await openMyTypes();
         if (typeof fetchCommissions === 'function') fetchCommissions();
     } catch (err) {
