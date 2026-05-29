@@ -94,7 +94,7 @@ async function fetchCommissions() {
         // 🌟 [수정 핵심부]: index.html에서 꽂아준 변수(window.currentSearch 또는 전역 currentSearch)를 확실하게 검사하고 필터 쿼리 주입
         const searchKeyword = (window.currentSearch || currentSearch || "").trim();
         if (searchKeyword !== "") {
-            query = query.or(`title.ilike.%${searchKeyword}%, profiles.username.ilike.%${searchKeyword}%`);
+            query = query.or(`title.ilike.%${searchKeyword}%,profiles.username.ilike.%${searchKeyword}%`);
         }
 
         const { data, error } = await query;
