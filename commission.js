@@ -77,7 +77,7 @@ function changeFilter(btn, mode) {
     }
 }
 
-// 1. 피드 조회
+// 1. 피드 조회 (🌟 원본 DB 칼럼 매핑 복구)
 async function fetchCommissions() {
     const listEl = document.getElementById('commissionList');
     if (!listEl) return;
@@ -113,7 +113,13 @@ async function fetchCommissions() {
 
         listEl.innerHTML = filteredData.map(item => {
             const artistName = item.profiles ? item.profiles.username : '알 수 없음';
-            const sampleImg = (item.images && item.images.length > 0) ? item.images[0] : 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
+            
+            // 🌟 image_url 원본 칼럼 맵핑 복구
+            let firstImg = 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
+            if (item.image_url) {
+                firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
+            }
+
             const slotText = item.slot_type === 'always' ? '상시 모집' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`;
             const statusBadge = item.is_closed 
                 ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">마감</span>`
@@ -121,9 +127,9 @@ async function fetchCommissions() {
             const tagsHtml = (item.tags && item.tags.length > 0) ? item.tags.map(t => `<span class="bg-gray-100 text-gray-500 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ') : '';
 
             return `
-                <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition flex flex-col cursor-pointer" onclick="openDetailModal(${item.id})">
+                <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col" onclick="openDetailModal(${item.id})">
                     <div class="relative w-full h-48 bg-gray-50 overflow-hidden">
-                        <img src="${sampleImg}" alt="${item.title}" class="w-full h-full object-cover">
+                        <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
                         <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">💎 ${item.price} 가치</span>
                     </div>
                     <div class="p-3.5 flex flex-col gap-1.5">
@@ -158,12 +164,13 @@ async function openArtistProfile(userId) {
         listContainer.innerHTML = "<p class='text-[11px] text-gray-400 py-2'>등록된 타입을 조회 중입니다...</p>";
         openModal('artistProfileModal');
 
-        const { data: comms } = await getSupabaseClient().from('commissions').select('id, title, price, images, slot_type, is_closed').eq('user_id', userId).eq('is_private', false).order('created_at', { ascending: false });
+        const { data: comms } = await getSupabaseClient().from('commissions').select('id, title, price, image_url, slot_type, is_closed').eq('user_id', userId).eq('is_private', false).order('created_at', { ascending: false });
         if (!comms || comms.length === 0) {
             listContainer.innerHTML = "<p class='text-[11px] text-gray-400 py-2 text-center'>현재 전시 중인 공개 타입이 없습니다.</p>";
         } else {
             listContainer.innerHTML = comms.map(c => {
-                const img = (c.images && c.images.length > 0) ? c.images[0] : 'https://placehold.co/100x100/fbcfe8/fff?text=No+Img';
+                let img = 'https://placehold.co/100x100/fbcfe8/fff?text=No+Img';
+                if (c.image_url) img = c.image_url.includes(',') ? c.image_url.split(',')[0] : c.image_url;
                 const sBadge = c.is_closed ? `<span class="bg-gray-300 text-gray-600 px-1.5 py-0.5 rounded text-[9px] font-bold">마감</span>` : `<span class="bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded text-[9px] font-bold">모집</span>`;
                 return `
                     <div class="flex items-center gap-3 bg-gray-50/70 p-2 rounded-xl border border-gray-100 cursor-pointer hover:bg-pink-50/20" onclick="closeModal('artistProfileModal'); openDetailModal(${c.id});">
@@ -179,7 +186,7 @@ async function openArtistProfile(userId) {
     } catch (e) { alert("작가 프로필 로드 실패: " + e.message); }
 }
 
-// 3. 커미션 상세보기 (🌟 마감 기한 출력 보안 패치)
+// 3. 커미션 상세보기 (🌟 원본 DB 칼럼 매핑 복구)
 async function openDetailModal(id) {
     try {
         const { data: item, error } = await getSupabaseClient().from('commissions').select(`*, profiles ( username, contact_info )`).eq('id', id).maybeSingle();
@@ -195,8 +202,16 @@ async function openDetailModal(id) {
         const slider = document.getElementById('detailSliderContainer');
         const counter = document.getElementById('detailImgCounter');
         slider.innerHTML = "";
-        const imgs = (item.images && item.images.length > 0) ? item.images : ['https://placehold.co/400x300/fbcfe8/fff?text=No+Image'];
-        imgs.forEach(url => { slider.innerHTML += `<img src="${url}" class="w-full h-full object-cover flex-shrink-0 snap-center">`; });
+        
+        // 🌟 image_url 다중 파싱 구조 복구
+        let imgs = [];
+        if (item.image_url) {
+            imgs = item.image_url.includes(',') ? item.image_url.split(',') : [item.image_url];
+        } else {
+            imgs = ['https://placehold.co/400x300/fbcfe8/fff?text=No+Image'];
+        }
+        
+        imgs.forEach(url => { slider.innerHTML += `<img src="${url.trim()}" class="w-full h-full object-cover flex-shrink-0 snap-center">`; });
 
         if (imgs.length > 1) {
             counter.innerText = `1 / ${imgs.length}`;
@@ -214,16 +229,13 @@ async function openDetailModal(id) {
         document.getElementById('detailSlot').innerText = item.is_closed ? '🔒 슬롯 마감' : `🔓 ${slotText}`;
 
         document.getElementById('detailTitle').innerText = item.title;
-        document.getElementById('detailItem').innerText = item.receive_item || '상세내용 없음';
-        
-        // 🌟 [중요]: 마감기한 데이터 표시부 바인딩 노출
+        document.getElementById('detailItem').innerText = item.item_wanted || '상세내용 없음'; // item_wanted 복구
         document.getElementById('detailDeadline').innerText = item.deadline || '상세 협의 후 결정';
-        
-        document.getElementById('detailCredit').innerText = item.credit_type || '출처 표기 불필요';
+        document.getElementById('detailCredit').innerText = item.credit_rule || '출처 표기 불필요'; // credit_rule 복구
         document.getElementById('detailDesc').innerText = item.description || '';
 
         const contactBtn = document.getElementById('detailContactBtn');
-        const contactTarget = item.contact_channel || (item.profiles ? item.profiles.contact_info : '');
+        const contactTarget = item.contact_info || (item.profiles ? item.profiles.contact_info : ''); // contact_info 복구
         if (contactTarget) {
             contactBtn.innerText = "💬 작가님에게 커미션 신청하기";
             contactBtn.onclick = () => {
@@ -264,13 +276,14 @@ async function fetchBookmarks() {
     if (!bList) return;
     if (!window.currentUserId) { bList.innerHTML = "<p class='text-xs text-gray-400 text-center py-10'>로그인 후 보관함을 이용해주세요! 🔒</p>"; return; }
     try {
-        const { data, error } = await getSupabaseClient().from('bookmarks').select(`id, commissions ( id, title, price, images, slot_type, is_closed, user_id, profiles ( username ) )`).eq('user_id', window.currentUserId);
+        const { data, error } = await getSupabaseClient().from('bookmarks').select(`id, commissions ( id, title, price, image_url, slot_type, is_closed, user_id, profiles ( username ) )`).eq('user_id', window.currentUserId);
         if (error) throw error;
         if (!data || data.length === 0) { bList.innerHTML = "<p class='text-xs text-gray-400 text-center py-14'>아직 하트를 누른 커미션 타입이 없습니다. 🤍</p>"; return; }
         bList.innerHTML = data.map(b => {
             const c = b.commissions; if(!c) return '';
             const artist = c.profiles ? c.profiles.username : '알 수 없음';
-            const img = (c.images && c.images.length > 0) ? c.images[0] : 'https://placehold.co/100x100/fbcfe8/fff?text=No+Img';
+            let img = 'https://placehold.co/100x100/fbcfe8/fff?text=No+Img';
+            if (c.image_url) img = c.image_url.includes(',') ? c.image_url.split(',')[0] : c.image_url;
             const badge = c.is_closed ? `<span class="bg-gray-300 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold">마감</span>` : `<span class="bg-green-100 text-green-600 text-[10px] px-1.5 py-0.5 rounded font-bold">모집중</span>`;
             return `
                 <div class="bg-white rounded-2xl p-3 flex gap-3 border border-gray-100 shadow-2xs cursor-pointer hover:border-pink-200" onclick="openDetailModal(${c.id})">
@@ -325,7 +338,7 @@ function openRegisterModal() {
     openModal('regModal');
 }
 
-// 4. 새 커미션 등록 및 수정 로직 (🌟 deadline 데이터 패킹 처리 완료)
+// 4. 새 커미션 등록 및 수정 로직 (🌟 원본 DB 칼럼 명칭 완벽 매칭 복구)
 async function handleCreateCommission(e) {
     e.preventDefault();
     const commId = document.getElementById('editCommissionId').value;
@@ -335,19 +348,18 @@ async function handleCreateCommission(e) {
     const slot_type = document.getElementById('commSlotType').value;
     const current_slots = parseInt(document.getElementById('commCurrentSlots').value) || 0;
     const max_slots = parseInt(document.getElementById('commMaxSlots').value) || 5;
-    const receive_item = document.getElementById('commItem').value.trim();
-    const credit_type = document.getElementById('commCredit').value.trim();
     
-    // 🌟 마감기한 데이터 수집
+    const item_wanted = document.getElementById('commItem').value.trim();
+    const credit_rule = document.getElementById('commCredit').value.trim();
     const deadline = document.getElementById('commDeadline').value.trim();
+    const contact_info = document.getElementById('commContact').value.trim();
     
-    const contact_channel = document.getElementById('commContact').value.trim();
     const description = document.getElementById('commDesc').value.trim();
     const fileInput = document.getElementById('commImage');
 
     const checkedTags = [];
     document.querySelectorAll('#regForm input[type="checkbox"]:checked').forEach(cb => { checkedTags.push(cb.getAttribute('data-name')); });
-    if(!title || price <= 0 || !contact_channel) return alert("필수 정보를 채워주세요!");
+    if(!title || price <= 0 || !contact_info) return alert("필수 정보를 채워주세요!");
 
     const submitBtn = document.getElementById('regSubmitBtn');
     submitBtn.innerText = "서버로 전송 중..."; submitBtn.disabled = true;
@@ -365,17 +377,18 @@ async function handleCreateCommission(e) {
 
         const payload = {
             title, price, slot_type, current_slots, max_slots,
-            receive_item, credit_type, deadline, contact_channel, description,
+            item_wanted, credit_rule, deadline, contact_info, description,
             tags: checkedTags
         };
 
         if (commId) {
-            if (finalImages.length > 0) payload.images = finalImages;
+            if (finalImages.length > 0) payload.image_url = finalImages.join(',');
             const { error } = await getSupabaseClient().from('commissions').update(payload).eq('id', commId).eq('user_id', window.currentUserId);
             if (error) throw error; alert("커미션 타입이 수정되었습니다! ✨");
         } else {
             payload.user_id = window.currentUserId;
-            payload.images = finalImages.length > 0 ? finalImages : ['https://placehold.co/400x300/fbcfe8/fff?text=No+Image'];
+            payload.image_url = finalImages.length > 0 ? finalImages.join(',') : 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
+            
             const { error } = await getSupabaseClient().from('commissions').insert([payload]); if (error) throw error;
             alert("새로운 커미션 타입이 등록되었습니다! 🎀");
         }
@@ -384,7 +397,7 @@ async function handleCreateCommission(e) {
     finally { submitBtn.innerText = commId ? "수정 완료" : "등록 완료"; submitBtn.disabled = false; }
 }
 
-// 5. 수정 폼 양식 호출 시 기한 데이터 로드 브릿지
+// 5. 수정 폼 데이터 복원 (🌟 칼럼 맵핑 원상 복구)
 function setupEditMode(item) {
     document.getElementById('editCommissionId').value = item.id;
     document.getElementById('commTitle').value = item.title || '';
@@ -393,13 +406,11 @@ function setupEditMode(item) {
     toggleSlotInputDisplay(item.slot_type || 'always');
     document.getElementById('commCurrentSlots').value = item.current_slots || 0;
     document.getElementById('commMaxSlots').value = item.max_slots || 5;
-    document.getElementById('commItem').value = item.receive_item || '';
-    document.getElementById('commCredit').value = item.credit_type || '';
     
-    // 🌟 수정창 열릴 때 기존 마감기한 데이터 복원
+    document.getElementById('commItem').value = item.item_wanted || '';
+    document.getElementById('commCredit').value = item.credit_rule || '';
     document.getElementById('commDeadline').value = item.deadline || '';
-    
-    document.getElementById('commContact').value = item.contact_channel || '';
+    document.getElementById('commContact').value = item.contact_info || '';
     document.getElementById('commDesc').value = item.description || '';
 
     document.querySelectorAll('#regForm input[type="checkbox"]').forEach(cb => {
