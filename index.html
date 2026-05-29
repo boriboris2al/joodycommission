@@ -100,18 +100,18 @@
                 
                 <!-- 드롭다운 버튼 5형제 가로 배열 -->
                 <div class="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none relative" style="overflow-y: visible !important;">
-                    <!-- 1. 화풍 -->
-                    <div id="dropdown-화풍" class="relative inline-block text-left">
-                        <button onclick="toggleDropdown('화풍')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            <span class="btn-text">🎨 화풍</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                    <!-- 1. SD/LD -->
+                    <div id="dropdown-SD/LD" class="relative inline-block text-left">
+                        <button onclick="toggleDropdown('SD/LD')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
+                            <span class="btn-text">SD/LD</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
                         <div class="dropdown-panel floating-dropdown-panel hidden min-w-[140px]"></div>
                     </div>
                     
-                    <!-- 2. 틀 종류 -->
-                    <div id="dropdown-틀 종류" class="relative inline-block text-left">
-                        <button onclick="toggleDropdown('틀 종류')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            <span class="btn-text">🖼️ 틀 종류</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                    <!-- 2. 틀 -->
+                    <div id="dropdown-틀" class="relative inline-block text-left">
+                        <button onclick="toggleDropdown('틀')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
+                            <span class="btn-text">틀</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
                         <div class="dropdown-panel floating-dropdown-panel hidden min-w-[200px]"></div>
                     </div>
@@ -119,7 +119,7 @@
                     <!-- 3. 채색 -->
                     <div id="dropdown-채색" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('채색')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            <span class="btn-text">✨ 채색 단계</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">채색</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
                         <div class="dropdown-panel floating-dropdown-panel hidden min-w-[240px]"></div>
                     </div>
@@ -127,7 +127,7 @@
                     <!-- 4. 구도 -->
                     <div id="dropdown-구도" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('구도')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            <span class="btn-text">👤 구도 범위</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">구도</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
                         <div class="dropdown-panel floating-dropdown-panel hidden min-w-[240px]"></div>
                     </div>
@@ -135,7 +135,7 @@
                     <!-- 5. 기타 -->
                     <div id="dropdown-기타" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('기타')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
-                            <span class="btn-text">🎁 기타</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                            <span class="btn-text">기타</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
                         <div class="dropdown-panel floating-dropdown-panel hidden min-w-[130px]"></div>
                     </div>
@@ -364,7 +364,7 @@
 
         // 드롭다운 외부 클릭 시 패널 자동으로 닫히는 보조 센서 인터랙션
         window.addEventListener('click', function(e) {
-            const categories = ['화풍', '틀 종류', '채색', '구도', '기타'];
+            const categories = ['SD/LD', '틀', '채색', '구도', '기타'];
             categories.forEach(cat => {
                 const wrapper = document.getElementById(`dropdown-${cat}`);
                 if (!wrapper) return;
@@ -401,8 +401,8 @@
         // 🌟 태그 선택 유무에 따라 버튼 이름을 변경하는 실시간 스위칭 헬퍼 기능
         function updateDropdownButtonsUI() {
             const categories = [
-                { label: '화풍', icon: '🎨', tags: ['SD', 'LD'] },
-                { label: '틀 종류', icon: '🖼️', tags: ['고정틀', '반고정틀', '자유'] },
+                { label: 'SD/LD', icon: '🎨', tags: ['SD', 'LD'] },
+                { label: '틀', icon: '🖼️', tags: ['고정틀', '반고정틀', '자유'] },
                 { label: '채색', icon: '✨', tags: ['낙서', '선화', '단색', '풀채색'] },
                 { label: '구도', icon: '👤', tags: ['두상', '흉상', '반신', '전신'] },
                 { label: '기타', icon: '🎁', tags: ['캐디', '기타'] },
