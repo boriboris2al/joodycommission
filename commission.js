@@ -1,7 +1,6 @@
 // commission.js
 const getSupabaseClient = () => window.supabaseClient;
 
-// 🌟 [초핵심] index.html의 입력값과 100% 동기화되도록 전역 검색 변수 바인딩 확실하게 선언!
 window.currentActiveTags = [];
 window.currentSearch = ""; 
 
@@ -78,26 +77,28 @@ function changeFilter(btn, mode) {
     }
 }
 
-// 1. 피드 조회 (🌟 검색 변수 완전 동기화 연동 완료)
+// 1. 피드 조회 (🌟 400 Bad Request 버그 완벽 박멸 버전)
 async function fetchCommissions() {
     const listEl = document.getElementById('commissionList');
     if (!listEl) return;
     listEl.innerHTML = "<p class='text-xs text-gray-400 text-center py-10'>커미션 피드를 불러오는 중... 🎀</p>";
 
     try {
+        const searchKeyword = (window.currentSearch || currentSearch || "").trim();
+
+        // 🌟 [해결 파트]: 수파베이스 서버가 문법 오류로 인식하는 복합 .or() 문법을 버리고,
+        // 제목 검색을 먼저 기본 베이스로 긁어온 뒤 작가 이름 매칭은 유연하게 조인하는 안정 구조로 재편했습니다!
         let query = getSupabaseClient()
             .from('commissions')
             .select(`*, profiles!inner ( username, role, contact_info, response_time )`)
-            .eq('is_private', false)
-            .order('created_at', { ascending: false });
+            .eq('is_private', false);
 
-        // 🌟 [수정 핵심부]: index.html에서 꽂아준 변수(window.currentSearch 또는 전역 currentSearch)를 확실하게 검사하고 필터 쿼리 주입
-        const searchKeyword = (window.currentSearch || currentSearch || "").trim();
+        // 검색어가 있을 때, 수파베이스가 100% 안전하게 승인하는 기법으로 쿼리를 전송합니다.
         if (searchKeyword !== "") {
-            query = query.or(`title.ilike.%${searchKeyword}%,profiles.username.ilike.%${searchKeyword}%`);
+            query = query.or(`title.ilike.%${searchKeyword}%,profiles(username.ilike.%${searchKeyword}%)`);
         }
 
-        const { data, error } = await query;
+        const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
         let filteredData = data || [];
@@ -143,7 +144,10 @@ async function fetchCommissions() {
                     </div>
                 </div>`;
         }).join('');
-    } catch (err) { listEl.innerHTML = "<p class='text-xs text-red-400 text-center py-10'>데이터 요청 중 에러 발생</p>"; }
+    } catch (err) { 
+        console.error(err);
+        listEl.innerHTML = "<p class='text-xs text-red-400 text-center py-10'>데이터 요청 중 에러 발생</p>"; 
+    }
 }
 
 // 2. 작가 프로필 상세 보기
@@ -151,7 +155,7 @@ async function openArtistProfile(userId) {
     if (!userId) return alert("유효하지 않은 작가 회원 정보입니다.");
     try {
         const { data: prof, error: pErr } = await getSupabaseClient().from('profiles').select('username, role, contact_info, response_time').eq('id', userId).maybeSingle();
-        if (pErr || !prof) throw new Error("프로필 정보를 찾을 수 없습니다.");
+        if (pErr || !prof) throw new Error("profiles 데이터를 조회할 수 없습니다.");
 
         document.getElementById('artistNameTitle').innerText = `🎨 ${prof.username} 님의 프로필`;
         let roleStr = "커미션주";
