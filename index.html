@@ -99,6 +99,7 @@
     <!-- 헤더 -->
     <header class="bg-pink-100 p-4 sticky top-0 z-50 flex justify-between items-center border-b border-pink-200">
         <h1 class="text-xl font-bold text-pink-600 tracking-wider cursor-pointer" onclick="location.reload()">🎀 주디 커미션</h1>
+        <!-- 🌟 내 프로필 클릭 시 동시 오픈 버그 차단 완료 -->
         <button id="loginBtn" class="bg-pink-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-pink-600 transition">로그인/가입</button>
     </header>
 
@@ -289,7 +290,6 @@
 
             <div class="border-b border-gray-100 pb-3">
                 <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
-                    <!-- 🌟 작가 이름 클릭 시 고유 프로필로 라우팅되도록 스타일링 튜닝 -->
                     <span id="detailArtist" class="cursor-pointer font-bold text-pink-600 hover:underline"></span>
                     <span id="detailSlot" class="font-bold text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full"></span>
                 </div>
@@ -333,7 +333,7 @@
         </div>
     </div>
 
-    <!-- 👤 2. [신규 추가] 타인 및 작가 프로필 상세 보기 모달 포맷 구역 -->
+    <!-- 👤 작가 및 본인 프로필 상세 보기 모달 구역 -->
     <div id="artistProfileModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl space-y-4">
             <button onclick="closeModal('artistProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -354,21 +354,28 @@
             </div>
 
             <div class="space-y-2 pt-2">
-                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 이 작가의 다른 타입들</h3>
+                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 등록된 커미션 타입</h3>
                 <div id="artistCommissionsList" class="flex flex-col gap-4"></div>
             </div>
         </div>
     </div>
 
-    <!-- 4. 프로필 메뉴 모달 -->
+    <!-- ⚙️ 4. 내 프로필 계정 메뉴 모달 (🌟 요구사항 1: 순서 정렬 및 신규 버튼 탑재 완료) -->
     <div id="profileMenuModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
-            <h2 class="text-lg font-bold text-gray-900 mb-4">내 계정</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-4">내 계정 관리</h2>
             <div class="space-y-2">
-                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 커미션 관리 (수정/비공개/마감/삭제)</button>
+                <!-- 1. 내 커미션 관리 -->
+                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 커미션 관리</button>
+                <!-- 2. 내 프로필 보기 (신설) -->
+                <button onclick="closeModal('profileMenuModal'); if(typeof openArtistProfile === 'function') openArtistProfile(window.currentUserId);" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm transition">👤 내 프로필 보기</button>
+                <!-- 3. 정보 수정 -->
                 <button onclick="openEditProfile()" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm transition">✏️ 정보 수정</button>
+                <!-- 4. 로그아웃 -->
                 <button onclick="closeModal('profileMenuModal'); if(confirm('로그아웃 하시겠습니까?')) handleLogout();" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-500 font-semibold p-3.5 rounded-xl text-sm transition">🚪 로그아웃</button>
+                <!-- 5. 계정 탈퇴 (신설) -->
+                <button onclick="closeModal('profileMenuModal'); if(typeof handleWithdrawal === 'function') handleWithdrawal();" class="w-full text-left bg-red-50 hover:bg-red-100 text-red-600 font-bold p-3.5 rounded-xl text-sm transition">🚨 계정 탈퇴하기</button>
             </div>
         </div>
     </div>
@@ -382,7 +389,7 @@
         </div>
     </div>
 
-    <!-- 6. 정보 수정 모달 (🌟 응답 시간 설정 칸 내장 보강) -->
+    <!-- 6. 정보 수정 모달 -->
     <div id="editProfileModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('editProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -397,7 +404,6 @@
                         <label class="text-xs font-semibold text-gray-500 block mb-1">연락망</label>
                         <input type="text" id="editContact" placeholder="오픈채팅 링크 또는 닉네임" class="w-full p-3 rounded-xl border border-gray-200">
                     </div>
-                    <!-- 🌟 응답 시간 설정 신규 인풋 -->
                     <div>
                         <label class="text-xs font-semibold text-gray-500 block mb-1">⏰ 응답 가능 시간</label>
                         <input type="text" id="editResponseTime" placeholder="예: 평일 18시~23시 / 주말 상시 대기" class="w-full p-3 rounded-xl border border-gray-200">
@@ -532,6 +538,15 @@
                 });
             }
 
+            // ⚠️ [범인 진압] 정보 수정 폼 서브밋 리스너 단단히 연동 완료!!
+            const editProfileForm = document.getElementById('editProfileForm');
+            if (editProfileForm) {
+                editProfileForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    if (typeof handleEditProfile === 'function') handleEditProfile(e);
+                });
+            }
+
             const regForm = document.getElementById('regForm');
             if (regForm) {
                 regForm.addEventListener('submit', (e) => {
@@ -553,17 +568,6 @@
                 searchInput.addEventListener('input', (e) => {
                     currentSearch = e.target.value;
                     if (typeof fetchCommissions === 'function') fetchCommissions();
-                });
-            }
-            const loginBtn = document.getElementById('loginBtn');
-            if (loginBtn) {
-                loginBtn.addEventListener('click', (e) => {
-                    if (window.currentUserId) {
-                        e.stopPropagation();
-                        if (typeof openArtistProfile === 'function') {
-                            openArtistProfile(window.currentUserId); // 내 고유 ID를 전달해 내 프로필 스크랩 카드 활성화!
-                        }
-                    }
                 });
             }
         });
