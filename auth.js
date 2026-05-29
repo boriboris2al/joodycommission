@@ -17,7 +17,6 @@ async function checkUser() {
         const loginBtn = document.getElementById('loginBtn');
 
         if (user) {
-            // profiles 테이블에서 내 유저 정보 조회
             const { data: profile, error } = await getSupabase()
                 .from('profiles')
                 .select('username, role')
@@ -30,8 +29,6 @@ async function checkUser() {
                 window.currentUserId = user.id;
                 window.currentUsername = profile.username;
             }
-
-            // 프로필 버튼 클릭 → 계정 메뉴 팝업 열기
             loginBtn.onclick = () => openProfileMenu();
         } else {
             loginBtn.innerText = "로그인/가입";
@@ -45,7 +42,7 @@ async function checkUser() {
     }
 }
 
-// 프로필 메뉴 열기 (역할에 따라 메뉴 구성)
+// 프로필 메뉴 열기
 function openProfileMenu() {
     const isCommissioner = window.currentUserRole === 'commissioner' || window.currentUserRole === 'both';
     const menuBtn = document.getElementById('menuMyTypes');
@@ -58,34 +55,26 @@ function openProfileMenu() {
 // 로그인/가입 처리
 async function handleAuth(e) {
     e.preventDefault();
-    
-    const usernameInput = document.getElementById('authUsername');
-    const username = usernameInput ? usernameInput.value.trim() : '';
+    const username = document.getElementById('authUsername').value.trim();
     const password = document.getElementById('authPassword').value;
-    
     const isSignUp = !document.getElementById('authExtraContainer').classList.contains('hidden');
 
-    if (!username) return alert("주디 인게임 닉네임을 입력해주세요!");
-    if (!password) return alert("비밀번호를 입력해주세요!");
-
+    if (!username || !password) return alert("빈칸을 모두 채워주세요!");
     const email = makeEmail(username);
 
     try {
         if (isSignUp) {
-            const contact = document.getElementById('authContact').value;
+            const contact = document.getElementById('authContact').value.trim();
             const role = document.getElementById('authRole').value;
 
-            // 닉네임 중복 체크
-            const { data: existing } = await getSupabase()
-                .from('profiles').select('id').eq('username', username).maybeSingle();
+            const { data: existing } = await getSupabase().from('profiles').select('id').eq('username', username).maybeSingle();
             if (existing) return alert("이미 사용 중인 닉네임입니다!");
 
-            // Supabase 가입
             const { data: authData, error: authError } = await getSupabase().auth.signUp({ email, password });
             if (authError) throw authError;
 
             if (authData.user) {
-                // profiles 테이블에 유저 정보 연동
+                // 🌟 칼럼 이름 정확히 contact_info로 매핑 가이드 주입
                 const { error: profError } = await getSupabase().from('profiles').insert([
                     { id: authData.user.id, username, role, contact_info: contact }
                 ]);
@@ -95,22 +84,16 @@ async function handleAuth(e) {
                 toggleAuthMode(); 
             }
         } else {
-            // 로그인 처리
             const { error } = await getSupabase().auth.signInWithPassword({ email, password });
             if (error) throw new Error("닉네임 또는 비밀번호가 올바르지 않습니다.");
 
             alert("로그인되었습니다! 🎀");
             closeModal('authModal');
             document.getElementById('authForm').reset();
-            
             await checkUser();
-            if (typeof fetchCommissions === 'function') {
-                fetchCommissions();
-            }
+            if (typeof fetchCommissions === 'function') fetchCommissions();
         }
-    } catch (error) {
-        alert("인증 실패: " + error.message);
-    }
+    } catch (error) { alert("인증 실패: " + error.message); }
 }
 
 async function handleLogout() {
@@ -138,12 +121,11 @@ function toggleAuthMode() {
     }
 }
 
-// 🖼️ 내 타입 목록 열기 대시보드 (🌟 수정/비공개/마감/삭제 완벽 통합형)
+// 내 타입 목록 관리 팝업 대시보드
 async function openMyTypes() {
     closeModal('profileMenuModal');
     const container = document.getElementById('myTypesList');
     if (!container) return;
-    
     container.innerHTML = "<p class='text-xs text-gray-400 text-center py-4'>불러오는 중...</p>";
     openModal('myTypesModal');
 
@@ -161,14 +143,9 @@ async function openMyTypes() {
         }
 
         container.innerHTML = data.map(item => {
-            // 새 다중 슬롯 시스템 매핑 문자열 정제
             const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}개`;
-            const closedBadge = item.is_closed
-                ? `<span class="text-[10px] bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-bold">마감</span>`
-                : `<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">모집중</span>`;
-            const privateBadge = item.is_private
-                ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>`
-                : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
+            const closedBadge = item.is_closed ? `<span class="text-[10px] bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-bold">마감</span>` : `<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">모집중</span>`;
+            const privateBadge = item.is_private ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>` : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
                 
             return `
                 <div class="bg-gray-50 rounded-xl p-3 flex flex-col gap-2.5 border border-gray-100">
@@ -189,49 +166,30 @@ async function openMyTypes() {
                             <button onclick="togglePrivateStatus(${item.id}, ${item.is_private})" class="text-[10px] text-gray-500 underline hover:text-purple-500">${item.is_private ? '공개 전환' : '비공개 전환'}</button>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join('');
-    } catch (err) {
-        container.innerHTML = "<p class='text-xs text-red-400 text-center py-4'>목록 로드 실패</p>";
-    }
+    } catch (err) { container.innerHTML = "<p class='text-xs text-red-400 text-center py-4'>목록 로드 실패</p>"; }
 }
 
-// 슬롯 마감/해제 토글
 async function toggleClosedStatus(id, currentStatus) {
     try {
-        const { error } = await getSupabase()
-            .from('commissions')
-            .update({ is_closed: !currentStatus })
-            .eq('id', id)
-            .eq('user_id', window.currentUserId);
+        const { error } = await getSupabase().from('commissions').update({ is_closed: !currentStatus }).eq('id', id).eq('user_id', window.currentUserId);
         if (error) throw error;
-        
         await openMyTypes();
         if (typeof fetchCommissions === 'function') fetchCommissions();
-    } catch (err) {
-        alert("상태 변경 실패: " + err.message);
-    }
+    } catch (err) { alert("상태 변경 실패: " + err.message); }
 }
 
-// 비공개/공개 토글
 async function togglePrivateStatus(id, currentStatus) {
     try {
-        const { error } = await getSupabase()
-            .from('commissions')
-            .update({ is_private: !currentStatus })
-            .eq('id', id)
-            .eq('user_id', window.currentUserId);
+        const { error } = await getSupabase().from('commissions').update({ is_private: !currentStatus }).eq('id', id).eq('user_id', window.currentUserId);
         if (error) throw error;
-        
         await openMyTypes();
         if (typeof fetchCommissions === 'function') fetchCommissions();
-    } catch (err) {
-        alert("비공개 상태 변경 실패: " + err.message);
-    }
+    } catch (err) { alert("비공개 상태 변경 실패: " + err.message); }
 }
 
-// 정보 수정 모달 열기 (🌟 응답 시간 연동 바인딩 패치 완료)
+// ✏️ 정보 수정 모달 열기 (🌟 response_time 누락되었던 버그 완벽 복구 치료!)
 async function openEditProfile() {
     closeModal('profileMenuModal');
     try {
@@ -240,31 +198,28 @@ async function openEditProfile() {
         if (profile) {
             document.getElementById('editUsername').value = profile.username || '';
             document.getElementById('editContact').value = profile.contact_info || '';
-            document.getElementById('editResponseTime').value = profile.response_time || ''; // 응답시간 동기화
+            document.getElementById('editResponseTime').value = profile.response_time || ''; // 👈 뇌 정지왔던 바인딩 칸 수리 완료!
         }
         document.getElementById('editPassword').value = '';
         openModal('editProfileModal');
-    } catch (e) {
-        alert("프로필 정보를 가져오지 못했습니다.");
-    }
+    } catch (e) { alert("프로필 정보를 가져오지 못했습니다."); }
 }
 
-// 정보 수정 저장 (🌟 response_time 칼럼 주입)
+// ✏️ 정보 수정 저장 (🌟 정확한 칼럼 이름 contact_info, response_time 동기화 보장)
 async function handleEditProfile(e) {
     e.preventDefault();
     const newUsername = document.getElementById('editUsername').value.trim();
     const newContact = document.getElementById('editContact').value.trim();
-    const newResponseTime = document.getElementById('editResponseTime').value.trim(); // 응답시간 텍스트 추출
+    const newResponseTime = document.getElementById('editResponseTime').value.trim();
     const newPassword = document.getElementById('editPassword').value;
 
     try {
         if (newUsername !== window.currentUsername) {
-            const { data: existing } = await getSupabase()
-                .from('profiles').select('id').eq('username', newUsername).maybeSingle();
+            const { data: existing } = await getSupabase().from('profiles').select('id').eq('username', newUsername).maybeSingle();
             if (existing) return alert("이미 다른 유저가 사용 중인 닉네임입니다!");
         }
 
-        // profiles 테이블 업데이트 (⏰ response_time 연동 완성!)
+        // 🌟 수파베이스 실재 칼럼 명칭에 100% 매칭 완료
         const { error: profError } = await getSupabase()
             .from('profiles')
             .update({ username: newUsername, contact_info: newContact, response_time: newResponseTime })
@@ -284,7 +239,5 @@ async function handleEditProfile(e) {
         closeModal('editProfileModal');
         await checkUser();
         if (typeof fetchCommissions === 'function') fetchCommissions();
-    } catch (err) {
-        alert("수정 실패: " + err.message);
-    }
+    } catch (err) { alert("수정 실패: " + err.message); }
 }
