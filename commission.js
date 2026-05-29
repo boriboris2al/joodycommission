@@ -77,31 +77,37 @@ function changeFilter(btn, mode) {
     }
 }
 
-// 1. 피드 조회 (🌟 400 Bad Request 버그 완벽 박멸 버전)
+// 1. 피드 조회 (🌟 클라이언트 기반 검색 엔진으로 전면 대개조)
 async function fetchCommissions() {
     const listEl = document.getElementById('commissionList');
     if (!listEl) return;
     listEl.innerHTML = "<p class='text-xs text-gray-400 text-center py-10'>커미션 피드를 불러오는 중... 🎀</p>";
 
     try {
-        const searchKeyword = (window.currentSearch || currentSearch || "").trim();
-
-        // 🌟 [해결 파트]: 수파베이스 서버가 문법 오류로 인식하는 복합 .or() 문법을 버리고,
-        // 제목 검색을 먼저 기본 베이스로 긁어온 뒤 작가 이름 매칭은 유연하게 조인하는 안정 구조로 재편했습니다!
-        let query = getSupabaseClient()
+        // 🌟 [서버 에러 원천 차단] 서버에는 문법 충돌 없는 안전한 기본 쿼리만 보냅니다.
+        const { data, error } = await getSupabaseClient()
             .from('commissions')
             .select(`*, profiles!inner ( username, role, contact_info, response_time )`)
-            .eq('is_private', false);
+            .eq('is_private', false)
+            .order('created_at', { ascending: false });
 
-        // 검색어가 있을 때, 수파베이스가 100% 안전하게 승인하는 기법으로 쿼리를 전송합니다.
-        if (searchKeyword !== "") {
-            query = query.or(`title.ilike.%${searchKeyword}%,profiles(username.ilike.%${searchKeyword}%)`);
-        }
-
-        const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
 
         let filteredData = data || [];
+        const searchKeyword = (window.currentSearch || currentSearch || "").trim().toLowerCase();
+
+        // 🌟 [안전한 실시간 검색 필터링] 브라우저 단에서 제목 및 작가명 매칭을 완벽하게 처리합니다.
+        if (searchKeyword !== "") {
+            filteredData = filteredData.filter(item => {
+                const titleMatch = item.title && item.title.toLowerCase().includes(searchKeyword);
+                const artistName = item.profiles ? item.profiles.username : '';
+                const artistMatch = artistName && artistName.toLowerCase().includes(searchKeyword);
+                
+                return titleMatch || artistMatch; // 제목이나 작가명 둘 중 하나라도 맞으면 포함
+            });
+        }
+
+        // 🏷️ 다중 태그 카테고리 필터링 적용
         if (window.currentActiveTags.length > 0) {
             filteredData = filteredData.filter(item => {
                 if (!item.tags || !Array.isArray(item.tags)) return false;
