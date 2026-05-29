@@ -27,6 +27,7 @@
             overflow-x: hidden;
         }
         
+        /* 👑 [레이어 2단 교정] 상세보기 모달 수파 빽 랭크 주입 (z-index: 30000) */
         .modal {
             display: none;
             position: fixed;
@@ -35,7 +36,6 @@
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.5);
-            /* 👑 [수정 1] 레이어 순서 완벽 교정: 카테고리(9999)보다 무조건 높게 지구 최상단(30000)으로 배치 */
             z-index: 30000 !important; 
             justify-content: center;
             align-items: center;
@@ -54,37 +54,46 @@
             scroll-snap-align: center;
         }
 
-        /* [파괴적 버그 해결] 카드 뒤로 파묻히는 원흉인 overflow-x를 무력화하고 무조건 최상단 노출 */
         .dropdown-container-box {
             position: relative;
-            z-index: 9999 !important; /* 전체 카테고리 판을 피드 위로 띄움 */
+            z-index: 9999 !important; /* 카테고리 선택 레이어 (9999) */
         }
 
+        /* 👑 [수정 1] 드롭다운 잘림 방지 콤팩트 패널 디자인 교정 */
         .floating-dropdown-panel {
             position: absolute;
-            left: 0;
             top: 100%;
-            margin-top: 6px;
+            margin-top: 4px;
             background-color: #ffffff;
             border: 1px solid #fbcfe8; /* pink-200 */
-            padding: 8px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.15);
-            z-index: 10000 !important; /* 카드 타일보다 무조건 무대 맨 앞으로 호출 */
-            /* 👑 [수정 2] 가로로 잘리던 배열을 세로(flex-col) 1열 나열 구조로 완벽 교정 */
+            padding: 4px; /* 여백 대폭 감소 */
+            border-radius: 12px;
+            box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.12);
+            z-index: 10000 !important;
             display: flex;
             flex-direction: column !important;
-            gap: 6px;
+            gap: 4px;
+            min-w: max-content !important; /* 여백 덩어리 삭제, 글자 길이에 딱 맞춤 */
         }
+        
+        /* 오른쪽 끝 구도, 기타 버튼 패널이 화면 밖으로 나가지 않게 정렬 방향 자동 가드 */
+        #dropdown-구도 .floating-dropdown-panel,
+        #dropdown-기타 .floating-dropdown-panel {
+            left: auto;
+            right: 0;
+        }
+
         .floating-dropdown-panel.hidden {
             display: none !important;
         }
 
-        /* 👑 [수정 2 보강] 세로 나열 시 드롭다운 내 버튼들이 가로 꽉 차게 1행 1버튼 되도록 커스텀 */
+        /* 👑 [수정 1 보강] 버튼 내부 패딩 최소화로 슬림화 단축 */
         .floating-dropdown-panel button {
             width: 100% !important;
-            text-align: left !important;
+            text-align: center !important;
             display: block !important;
+            padding: 5px 12px !important;
+            font-size: 11px !important;
         }
     </style>
 </head>
@@ -112,35 +121,35 @@
                         <button onclick="toggleDropdown('화풍')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
                             <span class="btn-text">🎨 SD/LD</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel floating-dropdown-panel hidden min-w-[140px]"></div>
+                        <div class="dropdown-panel floating-dropdown-panel hidden"></div>
                     </div>
                     
                     <div id="dropdown-틀 종류" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('틀 종류')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
                             <span class="btn-text">🖼️ 고정틀/자유</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel floating-dropdown-panel hidden min-w-[200px]"></div>
+                        <div class="dropdown-panel floating-dropdown-panel hidden"></div>
                     </div>
 
                     <div id="dropdown-채색" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('채색')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
                             <span class="btn-text">✨ 채색</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel floating-dropdown-panel hidden min-w-[150px]"></div>
+                        <div class="dropdown-panel floating-dropdown-panel hidden"></div>
                     </div>
 
                     <div id="dropdown-구도" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('구도')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
                             <span class="btn-text">👤 구도</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel floating-dropdown-panel hidden min-w-[150px]"></div>
+                        <div class="dropdown-panel floating-dropdown-panel hidden"></div>
                     </div>
 
                     <div id="dropdown-기타" class="relative inline-block text-left">
                         <button onclick="toggleDropdown('기타')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
                             <span class="btn-text">🎁 기타</span> <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
                         </button>
-                        <div class="dropdown-panel floating-dropdown-panel hidden min-w-[130px]"></div>
+                        <div class="dropdown-panel floating-dropdown-panel hidden"></div>
                     </div>
                 </div>
             </div>
@@ -356,7 +365,6 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // 외부 클릭 자동 소멸 센서
         window.addEventListener('click', function(e) {
             const categories = ['화풍', '틀 종류', '채색', '구도', '기타'];
             categories.forEach(cat => {
@@ -392,7 +400,6 @@
             }
         }
 
-        // 🌟 [이름 변경 완벽 고도화] 태그 자동 스위칭 타이틀 교정 로직
         function updateDropdownButtonsUI() {
             const categories = [
                 { label: '화풍', defaultName: 'SD/LD', icon: '🎨', tags: ['SD', 'LD'] },
@@ -411,11 +418,9 @@
                 const selectedInCat = cat.tags.filter(t => window.currentActiveTags && window.currentActiveTags.includes(t));
 
                 if (selectedInCat.length > 0) {
-                    // 선택된 태그가 있을 땐 그 태그 이름으로 완벽 치환!
                     btnTextEl.innerText = `${cat.icon} ${selectedInCat.join(', ')}`;
                     btnTextEl.parentElement.classList.add('border-pink-400', 'bg-pink-50/50');
                 } else {
-                    // 해제 시 지정한 이쁜 기본이름으로 복귀!
                     btnTextEl.innerText = `${cat.icon} ${cat.defaultName}`;
                     btnTextEl.parentElement.classList.remove('border-pink-400', 'bg-pink-50/50');
                 }
