@@ -66,15 +66,51 @@
             <div id="searchBar" class="mb-4">
                 <input type="text" id="searchInput" placeholder="타입 이름으로 검색..." class="w-full p-3 rounded-2xl bg-white border border-gray-200 text-sm shadow-sm focus:outline-none focus:border-pink-300">
             </div>
-            <div id="filterBar" class="flex gap-2 overflow-x-auto pb-3 scrollbar-none text-xs">
-                <button onclick="changeFilter(this, '전체')" class="bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition">전체</button>
-                <button onclick="changeFilter(this, 'SD')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">SD</button>
-                <button onclick="changeFilter(this, 'LD')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">LD</button>
-                <button onclick="changeFilter(this, '고정틀')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">고정틀</button>
-                <button onclick="changeFilter(this, '반고정틀')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">반고정틀</button>
-                <button onclick="changeFilter(this, '자유')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">자유</button>
-                <button onclick="changeFilter(this, '풀채색')" class="bg-white text-gray-600 border border-gray-200 px-3 py-1.5 rounded-full whitespace-nowrap hover:border-pink-300 transition">풀채색</button>
+            
+            <div class="mb-4 space-y-2">
+                <div class="flex gap-2 items-center overflow-x-auto pb-1 scrollbar-none">
+                    <button onclick="changeFilter(this, '전체')" class="bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition text-xs">전체보기 🔄</button>
+                    <span class="text-xs text-gray-400 font-bold px-1">| 카테고리:</span>
+                </div>
+                
+                <div class="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+                    <div id="dropdown-화풍" class="relative inline-block text-left">
+                        <button onclick="toggleDropdown('화풍')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
+                            🎨 화풍 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                        </button>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[140px] border-pink-100"></div>
+                    </div>
+                    
+                    <div id="dropdown-틀 종류" class="relative inline-block text-left">
+                        <button onclick="toggleDropdown('틀 종류')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
+                            🖼️ 틀 종류 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                        </button>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[200px] border-pink-100"></div>
+                    </div>
+
+                    <div id="dropdown-채색" class="relative inline-block text-left">
+                        <button onclick="toggleDropdown('채색')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
+                            ✨ 채색 단계 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                        </button>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[240px] border-pink-100"></div>
+                    </div>
+
+                    <div id="dropdown-구도" class="relative inline-block text-left">
+                        <button onclick="toggleDropdown('구도')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
+                            👤 구도 범위 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                        </button>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[240px] border-pink-100"></div>
+                    </div>
+
+                    <div id="dropdown-기타" class="relative inline-block text-left">
+                        <button onclick="toggleDropdown('기타')" class="bg-white text-gray-700 border border-gray-200 px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1 shadow-2xs">
+                            🎁 기타 <span class="dropdown-arrow transition-transform duration-200 text-[9px]">▼</span>
+                        </button>
+                        <div class="dropdown-panel hidden absolute left-0 mt-1.5 bg-white border border-gray-100 p-2 rounded-2xl shadow-lg z-40 flex gap-1.5 min-w-[130px] border-pink-100"></div>
+                    </div>
+                </div>
             </div>
+
             <div id="commissionList" class="grid grid-cols-1 gap-4"></div>
         </main>
     </div>
@@ -92,9 +128,8 @@
         <button id="tabBookmark" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400" onclick="switchTab('bookmark')">🔖<span class="mt-0.5">북마크</span></button>
     </nav>
 
-    <!-- 로그인/회원가입 모달 -->
     <div id="authModal" class="modal">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 relative shadow-xl overflow-x-hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 relative shadow-xl">
             <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
             <h2 id="authModalTitle" class="text-lg font-bold text-gray-900">로그인</h2>
             <form id="authForm">
@@ -116,7 +151,6 @@
         </div>
     </div>
 
-    <!-- 커미션 등록/수정 모달 (비공개 토글 제거됨) -->
     <div id="regModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl">
             <button onclick="closeModal('regModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -138,7 +172,7 @@
                     </div>
 
                     <div class="p-3 bg-gray-50 rounded-xl space-y-2">
-                        <p class="text-xs font-semibold text-gray-500">세부 분류 태그 선택</p>
+                        <p class="text-xs font-semibold text-gray-500">세부 분류 태그 선택 (중복가능)</p>
                         <div class="grid grid-cols-3 gap-2 text-xs text-gray-600">
                             <label><input type="checkbox" id="tagSD" data-name="SD"> SD</label>
                             <label><input type="checkbox" id="tagLD" data-name="LD"> LD</label>
@@ -153,15 +187,18 @@
                             <label><input type="checkbox" id="tagBust" data-name="흉상"> 흉상</label>
                             <label><input type="checkbox" id="tagHalf" data-name="반신"> 반신</label>
                             <label><input type="checkbox" id="tagBody" data-name="전신"> 전신</label>
+                            <label><input type="checkbox" id="tagCaddie" data-name="캐디"> 캐디</label>
+                            <label><input type="checkbox" id="tagEtc" data-name="기타"> 기타</label>
                         </div>
                     </div>
+                    
                     <input type="text" id="commItem" placeholder="💎 받는 아이템 (상세 기재)" class="w-full p-3 rounded-xl border border-gray-200">
                     <input type="text" id="commCredit" placeholder="📌 출처 표기 방식" class="w-full p-3 rounded-xl border border-gray-200">
                     <input type="text" id="commContact" placeholder="💬 신청 연락망 (예: 오픈채팅 링크 등)" class="w-full p-3 rounded-xl border border-pink-300" required>
                     <textarea id="commDesc" placeholder="타입에 대한 세부 설명을 작성해주세요." rows="4" class="w-full p-3 rounded-xl border border-gray-200"></textarea>
                     
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 block mb-1">샘플 이미지 업로드 (최대 4장)</label>
+                        <label class="text-xs font-semibold text-gray-500 block mb-1">샘플 이미지 업로드 (최대 4-6장)</label>
                         <input type="file" id="commImage" accept="image/*" multiple class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-pink-50 file:text-pink-700 hover:file:bg-pink-100">
                         <p id="editImgNotice" class="text-[10px] text-amber-500 mt-1 hidden">⚠️ 수정 모드: 새 사진을 올리면 기존 샘플들이 덮어씌워집니다.</p>
                     </div>
@@ -171,23 +208,21 @@
         </div>
     </div>
 
-    <!-- 상세 보기 모달 -->
     <div id="detailModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-2xl">
             <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
                 <div class="flex gap-1.5">
-                    <button id="detailDeleteBtn" class="bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs border border-red-200 hover:bg-red-100 hidden">🔴 삭제</button>
-                    <button id="detailEditBtn" class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs border border-blue-200 hover:bg-blue-100 hidden">✏️ 수정</button>
+                    <button id="detailDeleteBtn" class="bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-red-200 hover:bg-red-100 hidden">🔴 삭제</button>
+                    <button id="detailEditBtn" class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-blue-200 hover:bg-blue-100 hidden">✏️ 수정</button>
                 </div>
-                <button id="detailBookmarkBtn" class="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-xs border border-amber-200 hover:bg-amber-100">🤍 북마크</button>
+                <button id="detailBookmarkBtn" class="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-amber-200 hover:bg-amber-100">🤍 북마크</button>
                 <button onclick="closeModal('detailModal')" class="bg-white/90 text-gray-500 w-8 h-8 rounded-full flex items-center justify-center shadow-md font-bold text-lg">✕</button>
             </div>
             
-            <div class="relative -mt-1 -mx-1 rounded-2xl overflow-hidden group">
-                <div id="detailSliderContainer" class="h-56 bg-gray-100 flex overflow-x-auto snap-x snap-mandatory scrollbar-none">
-                </div>
-                <span id="detailPrice" class="absolute bottom-3 right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md z-10"></span>
-                <span id="detailImgCounter" class="absolute bottom-3 left-3 bg-black/50 text-white text-[10px] font-medium px-2 py-0.5 rounded-full z-10 hidden"></span>
+            <div class="relative -mt-1 -mx-1 rounded-2xl overflow-hidden">
+                <div id="detailSliderContainer" class="h-56 bg-gray-100 flex overflow-x-auto snap-x snap-mandatory scrollbar-none"></div>
+                <span id="detailPrice" class="absolute bottom-3 right-3 bg-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md z-20"></span>
+                <span id="detailImgCounter" class="absolute bottom-3 left-3 bg-black/50 text-white text-[10px] font-medium px-2 py-0.5 rounded-full z-20 hidden"></span>
             </div>
 
             <div class="border-b border-gray-100 pb-3">
@@ -211,7 +246,7 @@
                     <p id="detailDesc" class="text-gray-600 whitespace-pre-wrap leading-relaxed"></p>
                 </div>
             </div>
-            <button id="detailContactBtn" class="w-full bg-pink-500 text-white p-3 rounded-xl font-bold text-sm shadow-md hover:bg-pink-600 transition-colors"></button>
+            <button id="detailContactBtn" class="w-full bg-pink-500 text-white p-3 rounded-xl font-bold text-sm shadow-md hover:bg-pink-600"></button>
             
             <div class="border-t border-gray-100 pt-4 space-y-3">
                 <h3 class="text-xs font-bold text-gray-800">💬 신청 후기</h3>
@@ -219,15 +254,13 @@
                 
                 <form id="reviewForm" class="pt-2 border-t border-dashed border-gray-100 flex flex-col gap-2">
                     <input type="hidden" id="targetCommissionId">
-                    <div class="w-full">
-                        <select id="reviewRating" class="w-full p-2.5 rounded-xl border border-gray-200 text-xs bg-white focus:outline-none">
-                            <option value="5">⭐⭐⭐⭐⭐ (5점)</option>
-                            <option value="4">⭐⭐⭐⭐ (4점)</option>
-                            <option value="3">⭐⭐⭐ (3점)</option>
-                            <option value="2">⭐⭐ (2점)</option>
-                            <option value="1">⭐ (1점)</option>
-                        </select>
-                    </div>
+                    <select id="reviewRating" class="w-full p-2.5 rounded-xl border border-gray-200 text-xs bg-white">
+                        <option value="5">⭐⭐⭐⭐⭐ (5점)</option>
+                        <option value="4">⭐⭐⭐⭐ (4점)</option>
+                        <option value="3">⭐⭐⭐ (3점)</option>
+                        <option value="2">⭐⭐ (2점)</option>
+                        <option value="1">⭐ (1점)</option>
+                    </select>
                     <div class="flex gap-1.5 w-full">
                         <input type="text" id="reviewContent" placeholder="짧은 후기를 남겨주세요!" class="flex-1 p-2.5 border border-gray-200 rounded-xl text-xs focus:outline-none" required>
                         <button type="submit" class="bg-gray-800 text-white px-4 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">등록</button>
@@ -237,31 +270,28 @@
         </div>
     </div>
 
-    <!-- 프로필 메뉴 모달 -->
     <div id="profileMenuModal" class="modal">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl overflow-x-hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
             <h2 class="text-lg font-bold text-gray-900 mb-4">내 계정</h2>
             <div class="space-y-2">
-                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 타입 보기</button>
+                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm transition">🖼️ 내 타입 관리 (수정/비공개/마감)</button>
                 <button onclick="openEditProfile()" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm transition">✏️ 정보 수정</button>
                 <button onclick="closeModal('profileMenuModal'); if(confirm('로그아웃 하시겠습니까?')) handleLogout();" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-500 font-semibold p-3.5 rounded-xl text-sm transition">🚪 로그아웃</button>
             </div>
         </div>
     </div>
 
-    <!-- 내 타입 목록 모달 -->
     <div id="myTypesModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl">
             <button onclick="closeModal('myTypesModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
-            <h2 class="text-lg font-bold text-gray-900 mb-4">내 타입 목록</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-4">내 커미션 관리</h2>
             <div id="myTypesList" class="space-y-2"></div>
         </div>
     </div>
 
-    <!-- 정보 수정 모달 -->
     <div id="editProfileModal" class="modal">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl overflow-x-hidden">
+        <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('editProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
             <h2 class="text-lg font-bold text-gray-900 mb-4">정보 수정</h2>
             <form id="editProfileForm">
@@ -292,6 +322,21 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+        // 드롭다운 외부 클릭 시 패널 자동으로 닫히는 보조 센서 인터랙션
+        window.addEventListener('click', function(e) {
+            const categories = ['화풍', '틀 종류', '채색', '구도', '기타'];
+            categories.forEach(cat => {
+                const wrapper = document.getElementById(`dropdown-${cat}`);
+                if (!wrapper) return;
+                if (!wrapper.contains(e.target)) {
+                    const panel = wrapper.querySelector('.dropdown-panel');
+                    const arrow = wrapper.querySelector('.dropdown-arrow');
+                    if(panel) panel.classList.add('hidden');
+                    if(arrow) arrow.style.transform = 'rotate(0deg)';
+                }
+            });
+        });
+
         function switchTab(tab) {
             const secHome = document.getElementById('sectionHome');
             const secBookmark = document.getElementById('sectionBookmark');
@@ -313,24 +358,14 @@
             }
         }
 
-        window.onerror = function(message, source, lineno) {
-            alert("⚠️ 에러 발생!\n" + message + "\n(" + source + " " + lineno + "번째 줄)");
-            return false;
-        };
-
         window.addEventListener('load', () => {
-            if (!window.supabaseClient) {
-                alert("🚨 에러: supabase-config.js 설정을 확인해주세요.");
-                return;
-            }
-
             if (typeof checkUser === 'function') checkUser();
+            if (typeof renderTagDropdowns === 'function') renderTagDropdowns();
             if (typeof fetchCommissions === 'function') fetchCommissions();
 
             const regBtn = document.getElementById('registerTabBtn');
             if (regBtn) {
-                regBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
+                regBtn.addEventListener('click', () => {
                     document.getElementById('editCommissionId').value = "";
                     document.getElementById('regForm').reset();
                     document.getElementById('regModalTitle').innerText = "내 커미션 등록";
@@ -344,11 +379,7 @@
             if (authForm) {
                 authForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    if (typeof handleAuth === 'function') { 
-                        handleAuth(e);
-                    } else {
-                        alert("🚨 경고: auth.js 파일이 꼬였거나 캐시 에러입니다. Ctrl+Shift+R을 눌러주세요!");
-                    }
+                    if (typeof handleAuth === 'function') handleAuth(e);
                 });
             }
 
@@ -356,11 +387,7 @@
             if (regForm) {
                 regForm.addEventListener('submit', (e) => {
                     e.preventDefault();
-                    if (typeof handleCreateCommission === 'function') {
-                        handleCreateCommission(e);
-                    } else {
-                        alert("commission.js의 handleCreateCommission 함수를 찾을 수 없습니다.");
-                    }
+                    if (typeof handleCreateCommission === 'function') handleCreateCommission(e);
                 });
             }
 
@@ -369,14 +396,6 @@
                 reviewForm.addEventListener('submit', (e) => {
                     e.preventDefault();
                     if (typeof handleCreateReview === 'function') handleCreateReview(e);
-                });
-            }
-
-            const editProfileForm = document.getElementById('editProfileForm');
-            if (editProfileForm) {
-                editProfileForm.addEventListener('submit', (e) => {
-                    e.preventDefault();
-                    if (typeof handleEditProfile === 'function') handleEditProfile(e);
                 });
             }
 
