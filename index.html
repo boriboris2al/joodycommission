@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>주디 커미션</title>
     
-    <!-- 🔤 KoPubWorld 돋움체 웹 폰트 로드 -->
     <link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KoPubWorldDotum.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -96,21 +95,17 @@
 </head>
 <body class="bg-gray-50 text-gray-800 flex flex-col font-sans">
 
-    <!-- 헤더 -->
     <header class="bg-pink-100 p-4 sticky top-0 z-50 flex justify-between items-center border-b border-pink-200">
         <h1 class="text-xl font-bold text-pink-600 tracking-wider cursor-pointer" onclick="location.reload()">🎀 주디 커미션</h1>
         <button id="loginBtn" class="bg-pink-500 text-white px-3 py-1.5 rounded-full text-sm font-semibold hover:bg-pink-600 transition">로그인/가입</button>
     </header>
 
-    <!-- 🏠 홈 화면 컨텐츠 섹션 -->
     <div id="sectionHome" class="flex-1 flex flex-col">
         <main class="flex-1 p-4 pb-20 overflow-x-hidden">
-            <!-- 검색바 -->
             <div id="searchBar" class="mb-4">
                 <input type="text" id="searchInput" placeholder="타입 이름 또는 작가 이름 검색..." class="w-full p-3 rounded-2xl bg-white border border-gray-200 text-sm shadow-sm focus:outline-none focus:border-pink-300">
             </div>
             
-            <!-- 🗂️ 5대 카테고리 드롭다운 바 구역 -->
             <div class="mb-5 space-y-2 dropdown-container-box">
                 <div class="flex gap-2 items-center">
                     <button onclick="changeFilter(this, '전체')" class="bg-pink-500 text-white px-3 py-1.5 rounded-full whitespace-nowrap font-medium shadow-sm transition text-xs">전체보기 🔄</button>
@@ -155,12 +150,10 @@
                 </div>
             </div>
 
-            <!-- 1행 1타입 전용 피드 리스트 -->
             <div id="commissionList" class="flex flex-col gap-5 relative" style="z-index: 10;"></div>
         </main>
     </div>
 
-    <!-- 🔖 북마크 화면 컨텐츠 섹션 -->
     <div id="sectionBookmark" class="flex-1 flex flex-col hidden">
         <main class="flex-1 p-4 pb-20 overflow-x-hidden">
             <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 내가 찜한 커미션</h2>
@@ -168,14 +161,12 @@
         </main>
     </div>
 
-    <!-- 하단 고정 탭 바 -->
     <nav class="fixed bottom-0 left-0 right-0 max-w-[420px] mx-auto bg-white border-t border-gray-100 p-2 flex justify-around items-center z-50">
         <button id="tabHome" class="flex flex-col items-center text-pink-500 font-semibold text-xs" onclick="switchTab('home')">🏠<span class="mt-0.5">홈</span></button>
         <button id="registerTabBtn" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400">➕<span class="mt-0.5">등록</span></button>
         <button id="tabBookmark" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400" onclick="switchTab('bookmark')">🔖<span class="mt-0.5">북마크</span></button>
     </nav>
 
-    <!-- 1. 로그인/회원가입 모달 -->
     <div id="authModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 relative shadow-xl">
             <button onclick="closeModal('authModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -199,7 +190,6 @@
         </div>
     </div>
 
-    <!-- 2. 커미션 등록/수정 통합 모달 -->
     <div id="regModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl">
             <button onclick="closeModal('regModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -255,7 +245,6 @@
                     
                     <input type="text" id="commItem" placeholder="💎 받는 아이템 (상세 기재)" class="w-full p-3 rounded-xl border border-gray-200">
                     <input type="text" id="commCredit" placeholder="📌 출처 표기 방식" class="w-full p-3 rounded-xl border border-gray-200">
-                    <!-- 🌟 [신규 추가] 작업 마감기한 프리 텍스트 인풋 컴포넌트 탑재 완료! -->
                     <input type="text" id="commDeadline" placeholder="📅 작업 마감기한 (예: 최대 2주 / 5일 이내)" class="w-full p-3 rounded-xl border border-gray-200">
                     <input type="text" id="commContact" placeholder="💬 신청 연락망 (예: 오픈채팅 링크 등)" class="w-full p-3 rounded-xl border border-pink-300" required>
                     <textarea id="commDesc" placeholder="타입에 대한 세부 설명을 작성해주세요." rows="4" class="w-full p-3 rounded-xl border border-gray-200"></textarea>
@@ -271,7 +260,6 @@
         </div>
     </div>
 
-    <!-- 🔍 3. 커미션 상세 모달 -->
     <div id="detailModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-2xl">
             <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20">
@@ -301,7 +289,6 @@
                     <p class="font-bold text-blue-600 mb-0.5">💎 받는 아이템</p>
                     <p id="detailItem" class="text-gray-700 font-medium"></p>
                 </div>
-                <!-- 🌟 [신규 추가] 상세보기 본문 카드섹션 내 마감기한 표시판 이식 레이아웃 -->
                 <div class="bg-purple-50 p-3 rounded-xl">
                     <p class="font-bold text-purple-600 mb-0.5">📅 작업 마감기한</p>
                     <p id="detailDeadline" class="text-gray-700 font-medium"></p>
@@ -339,7 +326,6 @@
         </div>
     </div>
 
-    <!-- 👤 작가 및 본인 프로필 상세 보기 모달 구역 -->
     <div id="artistProfileModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl space-y-4">
             <button onclick="closeModal('artistProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -366,7 +352,6 @@
         </div>
     </div>
 
-    <!-- ⚙️ 내 프로필 계정 메뉴 모달 -->
     <div id="profileMenuModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -381,7 +366,6 @@
         </div>
     </div>
 
-    <!-- 5. 내 타입 보기 모달 -->
     <div id="myTypesModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative shadow-xl">
             <button onclick="closeModal('myTypesModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -390,7 +374,6 @@
         </div>
     </div>
 
-    <!-- 6. 정보 수정 모달 -->
     <div id="editProfileModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative shadow-xl">
             <button onclick="closeModal('editProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl">✕</button>
@@ -517,18 +500,7 @@
                 };
             }
 
-            const loginBtn = document.getElementById('loginBtn');
-            if (loginBtn) {
-                loginBtn.addEventListener('click', (e) => {
-                    if (window.currentUserId) {
-                        e.stopPropagation();
-                        if (typeof openArtistProfile === 'function') {
-                            openArtistProfile(window.currentUserId);
-                        }
-                    }
-                });
-            }
-
+            // 🌟 [원흉 제거 완료]: 팝업 난사 버그를 일으키던 강제 클릭 이벤트를 지우고 깔끔하게 원복!
             const regBtn = document.getElementById('registerTabBtn');
             if (regBtn) {
                 regBtn.addEventListener('click', () => {
