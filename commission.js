@@ -484,16 +484,18 @@ function openImageViewer(images, startIdx) {
 
 async function updateBookmarkButtonUI(commissionId) {
     const btn = document.getElementById('detailBookmarkBtn');
-    if (!window.currentUserId) { btn.innerText = "🤍 북마크"; btn.onclick = () => alert("로그인 후 이용 가능합니다!"); return; }
+    if (!window.currentUserId) { btn.innerText = "★ 북마크"; btn.onclick = () => alert("로그인 후 이용 가능합니다!"); return; }
     try {
         const { data } = await getSupabaseClient().from('bookmarks').select('id').eq('user_id', window.currentUserId).eq('commission_id', commissionId).maybeSingle();
         if (data) {
-            btn.innerText = "❤️ 찜 해제";
-            btn.className = "bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-red-200 hover:bg-red-100";
+            // 북마크 되어있을 때: 핑크색 테마(y2k-nametag) + 북마크 해제 문구
+            btn.innerText = "★ 북마크 해제";
+            btn.className = "px-2.5 py-1 rounded-full text-[10px] font-bold transition-all y2k-nametag";
             btn.onclick = () => removeBookmark(data.id, commissionId);
         } else {
-            btn.innerText = "🤍 북마크 찜";
-            btn.className = "bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-amber-200 hover:bg-amber-100";
+            // 북마크 안 되어있을 때: 밝은 노란색 테마(btn-y2k-yellow) + 북마크 문구
+            btn.innerText = "★ 북마크";
+            btn.className = "px-2.5 py-1 rounded-full text-[10px] font-bold transition-all btn-y2k-yellow";
             btn.onclick = () => addBookmark(commissionId);
         }
     } catch (e) {}
