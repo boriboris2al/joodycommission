@@ -433,14 +433,19 @@
                     <p id="detailCredit" class="text-gray-700 p-3 bg-white"></p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2">
-                    <div class="border border-green-200 rounded-xl overflow-hidden">
-                        <div class="bg-gradient-to-bottom from-green-300 to-green-500 border-b border-green-600 px-2.5 py-1 text-white font-bold text-[11px]">✅ OK</div>
-                        <p id="detailOk" class="text-gray-700 p-2.5 bg-white min-h-[50px] whitespace-pre-wrap text-[11px]"></p>
+            <div class="grid grid-cols-2 gap-2">
+                    <div class="border border-green-200 rounded-xl overflow-hidden shadow-sm">
+                        <div class="y2k-nametag px-2.5 py-1 text-white font-bold text-[11px] border-b border-pink-500">
+                            ✅ OK
+                        </div>
+                        <p id="detailOk" class="text-gray-700 p-2.5 bg-white min-h-[60px] whitespace-pre-wrap text-[11px]"></p>
                     </div>
-                    <div class="border border-red-200 rounded-xl overflow-hidden">
-                        <div class="bg-gradient-to-bottom from-red-300 to-red-500 border-b border-red-600 px-2.5 py-1 text-white font-bold text-[11px]">❌ NG</div>
-                        <p id="detailNg" class="text-gray-700 p-2.5 bg-white min-h-[50px] whitespace-pre-wrap text-[11px]"></p>
+                    
+                    <div class="border border-red-200 rounded-xl overflow-hidden shadow-sm">
+                        <div class="y2k-nametag px-2.5 py-1 text-white font-bold text-[11px] border-b border-pink-500">
+                            ❌ NG
+                        </div>
+                        <p id="detailNg" class="text-gray-700 p-2.5 bg-white min-h-[60px] whitespace-pre-wrap text-[11px]"></p>
                     </div>
                 </div>
 
@@ -453,7 +458,7 @@
             <button id="detailContactBtn" class="w-full y2k-nametag text-white p-3 rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-opacity"></button>
             
             <div class="border-t-2 border-dashed border-pink-100 pt-4 space-y-3">
-                <h3 class="text-xs font-bold text-pink-600 flex items-center gap-1">💬 일촌들의 한줄 후기</h3>
+                <h3 class="text-xs font-bold text-pink-600 flex items-center gap-1">💬 커미션 한줄 후기</h3>
                 <div id="reviewList" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
                 
                 <form id="reviewForm" class="pt-2 border-t-2 border-dashed border-pink-100 flex flex-col gap-2">
@@ -467,17 +472,17 @@
                     </select>
 
                     <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
-                        <input type="checkbox" id="reviewAnonymous" class="rounded border-pink-300 text-pink-500 focus:ring-pink-400"> 비밀글로 속삭이기 (익명)
+                        <input type="checkbox" id="reviewAnonymous" class="rounded border-pink-300 text-pink-500 focus:ring-pink-400"> 익명으로 등록
                     </label>
 
                     <div class="flex gap-1.5 w-full">
-                        <input type="text" id="reviewContent" placeholder="여기에 소중한 한줄 방명록을 적어보세요!" class="flex-1 p-2.5 border-2 border-dashed border-pink-100 rounded-xl text-xs focus:outline-none focus:border-pink-300" required>
+                        <input type="text" id="reviewContent" placeholder="짧은 후기를 적어보세요!" class="flex-1 p-2.5 border-2 border-dashed border-pink-100 rounded-xl text-xs focus:outline-none focus:border-pink-300" required>
                         <button type="submit" id="reviewSubmitBtn" class="bg-gray-800 text-white px-4 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm">등록</button>
                     </div>
 
                     <div class="flex items-center gap-2">
                         <label class="text-[10px] text-pink-400 flex items-center gap-1 cursor-pointer hover:text-pink-600 underline">
-                            📷 사진 인화 첨부 (선택)
+                            📷 사진 첨부 (선택)
                             <input type="file" id="reviewImage" accept="image/*" class="hidden">
                         </label>
                         <span id="reviewImageName" class="text-[10px] text-pink-500 truncate max-w-[140px]"></span>
