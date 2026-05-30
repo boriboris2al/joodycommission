@@ -355,7 +355,7 @@ async function openDetailModal(id) {
             };
         } else { contactBtn.innerText = "등록된 연락 경로가 없습니다."; contactBtn.onclick = null; }
 
-        await updateBookmarkButtonUI(item.id);
+        await BookmarkBtn(item.id);
         document.getElementById('targetCommissionId').value = item.id;
 
         window.editingReviewId = null;
@@ -482,7 +482,7 @@ function openImageViewer(images, startIdx) {
     document.addEventListener('keydown', escHandler);
 }
 
-async function updateBookmarkButtonUI(commissionId) {
+async function BookmarkBtn(commissionId) {
     const btn = document.getElementById('detailBookmarkBtn');
     if (!window.currentUserId) { btn.innerText = "★ 북마크"; btn.onclick = () => alert("로그인 후 이용 가능합니다!"); return; }
     try {
@@ -500,8 +500,8 @@ async function updateBookmarkButtonUI(commissionId) {
         }
     } catch (e) {}
 }
-async function addBookmark(commissionId) { await getSupabaseClient().from('bookmarks').insert([{ user_id: window.currentUserId, commission_id: commissionId }]); await updateBookmarkButtonUI(commissionId); }
-async function removeBookmark(bookmarkId, commissionId) { await getSupabaseClient().from('bookmarks').delete().eq('id', bookmarkId); await updateBookmarkButtonUI(commissionId); }
+async function addBookmark(commissionId) { await getSupabaseClient().from('bookmarks').insert([{ user_id: window.currentUserId, commission_id: commissionId }]); await BookmarkBtn(commissionId); }
+async function removeBookmark(bookmarkId, commissionId) { await getSupabaseClient().from('bookmarks').delete().eq('id', bookmarkId); await BookmarkBtn(commissionId); }
 
 async function fetchBookmarks() {
     const bList = document.getElementById('bookmarkList');
