@@ -50,7 +50,7 @@ function openProfileMenu() {
     openModal('profileMenuModal');
 }
 
-// ✅ [신규] 비밀번호 보기/숨기기 토글
+// 비밀번호 보기/숨기기 토글
 function togglePasswordVisibility(inputId, toggleBtn) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -181,13 +181,15 @@ async function openMyTypes() {
                 ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>`
                 : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
 
-            // ✅ [신규] 끌올 버튼: 마지막 끌올 시각 체크 (이틀 1회)
             const now = new Date();
             const bumpedAt = item.bumped_at ? new Date(item.bumped_at) : null;
             const hoursSinceBump = bumpedAt ? (now - bumpedAt) / (1000 * 60 * 60) : 999;
             const canBump = hoursSinceBump >= 48;
+
+            // ✅ 충돌정리: handleBumpCommission은 commission.js에 단일 정의
+            // bumped_at 값을 함께 전달하여 48시간 체크가 대시보드에서도 작동
             const bumpBtn = canBump
-                ? `<button onclick="handleBumpCommission(${item.id})" class="text-[11px] bg-green-50 text-green-600 px-2.5 py-1 rounded-lg font-bold hover:bg-green-100">⬆️ 끌올</button>`
+                ? `<button onclick="handleBumpCommission(${item.id}, '${item.bumped_at || ''}')" class="text-[11px] bg-green-50 text-green-600 px-2.5 py-1 rounded-lg font-bold hover:bg-green-100">⬆️ 끌올</button>`
                 : `<button disabled class="text-[11px] bg-gray-100 text-gray-400 px-2.5 py-1 rounded-lg font-bold cursor-not-allowed" title="이틀에 한 번만 끌올 가능합니다">⬆️ 끌올 대기중</button>`;
 
             return `
@@ -216,20 +218,7 @@ async function openMyTypes() {
     } catch (err) { container.innerHTML = "<p class='text-xs text-red-400 text-center py-4'>목록 로드 실패</p>"; }
 }
 
-// ✅ [신규] 끌올 처리
-async function handleBumpCommission(id) {
-    try {
-        const { error } = await getSupabase()
-            .from('commissions')
-            .update({ bumped_at: new Date().toISOString() })
-            .eq('id', id)
-            .eq('user_id', window.currentUserId);
-        if (error) throw error;
-        alert("끌어올리기 완료! 최상단에 노출됩니다 ⬆️");
-        await openMyTypes();
-        if (typeof fetchCommissions === 'function') fetchCommissions();
-    } catch (err) { alert("끌올 실패: " + err.message); }
-}
+// ✅ 충돌정리: auth.js의 handleBumpCommission 제거 — commission.js 단일 버전 사용
 
 async function toggleClosedStatus(id, currentStatus) {
     try {
@@ -249,7 +238,7 @@ async function togglePrivateStatus(id, currentStatus) {
     } catch (err) { alert("비공개 상태 변경 실패: " + err.message); }
 }
 
-// ✅ [신규] 커미션/프로필 공유 링크 복사
+// 커미션/프로필 공유 링크 복사
 function shareCommissionLink(commissionId, title) {
     const url = `${location.origin}${location.pathname}?commission=${commissionId}`;
     if (navigator.share) {
@@ -272,7 +261,7 @@ function shareProfileLink(userId, username) {
     }
 }
 
-// ✏️ 정보 수정 모달 열기
+// 정보 수정 모달 열기
 async function openEditProfile() {
     closeModal('profileMenuModal');
     try {
@@ -288,7 +277,7 @@ async function openEditProfile() {
     } catch (e) { alert("정보를 가져오지 못했습니다."); }
 }
 
-// ✏️ 정보 수정 저장
+// 정보 수정 저장
 async function handleEditProfile(e) {
     if (e) e.preventDefault();
     const newUsername = document.getElementById('editUsername').value.trim();
