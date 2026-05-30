@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Joody Commission ⭐️ PurinLand Style</title>
     
-    <link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KoPubWorldDotum.css">
+    <link class="kopub-readable" rel="stylesheet" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KoPubWorldDotum.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -121,7 +121,7 @@
         #dropdown-기타 .floating-dropdown-panel { left: auto; right: 0; }
         .floating-dropdown-panel.hidden { display: none !important; }
         
-        /* 버튼 및 네임태그 요소 입체 그라데이션 효과 */
+        /* 버튼 및 네임태그 요소 입체 그라데이션 효과 기본 */
         .y2k-nametag {
             background: linear-gradient(to bottom, #fbcfe8 0%, #f472b6 100%);
             border: 1px solid #db2777;
@@ -151,43 +151,41 @@
             letter-spacing: -0.5px;
         }
 
-        /* 제어 버튼용 얇은 외곽선 + 내부 그라데이션 스타일 지정 */
+        /* 제어 버튼용 입체 그라데이션 가공 명세 정의 (외곽선 1px 고정형) */
         .btn-y2k-pink {
-            background: linear-gradient(to bottom, #fff5f5 0%, #ffe3e3 100%);
-            border: 1px solid #fca5a5;
-            color: #dc2626;
-            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
+            background: linear-gradient(to bottom, #fecaca 0%, #f87171 100%) !important;
+            border: 1px solid #dc2626 !important;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
+            color: #ffffff !important;
         }
         .btn-y2k-blue {
-            background: linear-gradient(to bottom, #f0f9ff 0%, #e0f2fe 100%);
-            border: 1px solid #bae6fd;
-            color: #2563eb;
-            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
+            background: linear-gradient(to bottom, #bfdbfe 0%, #60a5fa 100%) !important;
+            border: 1px solid #2563eb !important;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
+            color: #ffffff !important;
         }
         .btn-y2k-green {
-            background: linear-gradient(to bottom, #fffbeb 0%, #fef3c7 100%);
-            border: 1px solid #fcd34d;
-            color: #d97706;
-            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
+            background: linear-gradient(to bottom, #fef3c7 0%, #fbbf24 100%) !important;
+            border: 1px solid #d97706 !important;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
+            color: #ffffff !important;
         }
         .btn-y2k-purple {
-            background: linear-gradient(to bottom, #f0fdf4 0%, #dcfce7 100%);
-            border: 1px solid #bbf7d0;
-            color: #16a34a;
-            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
+            background: linear-gradient(to bottom, #bbf7d0 0%, #4ade80 100%) !important;
+            border: 1px solid #16a34a !important;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
+            color: #ffffff !important;
         }
-
-        /* 후기 내부 첨부 이미지 비율 유지 및 클릭 비활성화 */
-        .review-attached-img {
-            object-fit: contain;
-            max-height: 240px;
-            width: 100%;
-            pointer-events: none;
-            cursor: default;
+        .btn-y2k-bump {
+            background: linear-gradient(to bottom, #fef08a 0%, #eab308 100%) !important;
+            border: 1px solid #ca8a04 !important;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
+            color: #ffffff !important;
         }
 
         .sort-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -307,10 +305,10 @@
             <form id="regForm">
                 <input type="hidden" id="editCommissionId">
                 <div class="space-y-3 text-sm">
-                    <input type="text" id="commTitle" placeholder="타입 이름 (예: 말랑 뽀작 두상)" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
+                    <input type="text" id="commTitle" placeholder="타입 이름 (예: 말랑 뽀작 두상)" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none" required>
                     
                     <div class="flex gap-2">
-                        <input type="number" step="0.1" id="commPrice" placeholder="가격 (가치 단위)" class="w-1/2 p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
+                        <input type="number" step="0.1" id="commPrice" placeholder="가격 (가치 단위)" class="w-1/2 p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none" required>
                         <select id="commSlotType" class="w-1/2 p-3 rounded-xl border-2 border-dashed border-pink-100 bg-white text-xs focus:outline-none">
                             <option value="always">상시 커미션</option>
                             <option value="limited">슬롯 제한제</option>
@@ -385,6 +383,7 @@
                 <div class="flex gap-1.5">
                     <button id="detailDeleteBtn" class="btn-y2k-pink px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">🔴 삭제</button>
                     <button id="detailEditBtn" class="btn-y2k-blue px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">✏️ 수정</button>
+                    <button id="detailBumpBtn" class="btn-y2k-bump px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">⬆️ 끌올</button>
                 </div>
                 <div class="flex gap-1.5 items-center">
                     <button id="detailBookmarkBtn" class="btn-y2k-green px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🤍 북마크 찜</button>
