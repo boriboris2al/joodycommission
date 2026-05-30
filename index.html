@@ -65,11 +65,12 @@
 
         /* ✅ 수정3: phone-container 높이 고정 + 내부 스크롤 구조 */
         .phone-container {
-            max-width: 420px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            height: 100vh;
-            overflow: hidden;
+               max-width: 420px;
+                margin: 0 auto;
+                background-color: #ffffff;
+                height: 100vh;
+                height: 100dvh;
+                overflow: hidden;
             border-left: 4px double #fbcfe8;
             border-right: 4px double #fbcfe8;
             box-shadow: 0 0 30px rgba(219, 39, 119, 0.1);
@@ -278,7 +279,7 @@
         </div>
 
         <!-- ✅ 수정3: absolute → flex-shrink:0 으로 플로우 안에 고정 -->
-        <nav style="flex-shrink: 0;" class="bg-white border-t-4 border-double border-pink-200 p-2 flex justify-around items-center z-50">
+       <nav style="flex-shrink:0; padding-bottom:env(safe-area-inset-bottom);" class="bg-white border-t-4 border-double border-pink-200 p-2 flex justify-around items-center z-50">
             <button id="tabHome" class="flex flex-col items-center text-pink-500 font-bold text-xs" onclick="switchTab('home')">🏠<span class="mt-0.5">홈</span></button>
             <button id="registerTabBtn" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400">➕<span class="mt-0.5">등록</span></button>
             <button id="tabBookmark" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400" onclick="switchTab('bookmark')">🔖<span class="mt-0.5">북마크</span></button>
