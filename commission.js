@@ -1,4 +1,3 @@
-// commission.js
 const getSupabaseClient = () => window.supabaseClient;
 
 window.currentActiveTags = [];
@@ -101,7 +100,6 @@ function shuffleArray(arr) {
     return a;
 }
 
-// 1. 피드 조회
 async function fetchCommissions() {
     const listEl = document.getElementById('commissionList');
     if (!listEl) return;
@@ -170,6 +168,12 @@ async function fetchCommissions() {
             filteredData.sort((a, b) => (b.bookmark_count || 0) - (a.bookmark_count || 0));
         } else if (sortMode === 'popular') {
             filteredData.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
+        } else if (sortMode === 'latest') {
+            filteredData.sort((a, b) => {
+                const dateA = new Date(a.bumped_at || a.created_at);
+                const dateB = new Date(b.bumped_at || b.created_at);
+                return dateB - dateA;
+            });
         }
 
         if (filteredData.length === 0) {
@@ -191,7 +195,7 @@ async function fetchCommissions() {
                 ? item.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ')
                 : '';
             const bumpedBadge = item.bumped_at
-                ? `<span class="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full">⬆️ 끌올</span>`
+                ? `<span class="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full"> bump </span>`
                 : '';
 
             return `
@@ -216,7 +220,6 @@ async function fetchCommissions() {
     }
 }
 
-// 2. 작가 프로필
 async function openArtistProfile(userId) {
     if (!userId) return alert("유효하지 않은 작가 회원 정보입니다.");
     try {
@@ -272,7 +275,6 @@ async function openArtistProfile(userId) {
     } catch (e) { alert("작가 프로필 로드 실패: " + e.message); }
 }
 
-// 3. 커미션 상세보기 (🌟 이미지 클릭 시 전체 화면 확대 연동 수술 복구)
 async function openDetailModal(id) {
     try {
         const { data: item, error } = await getSupabaseClient()
@@ -292,6 +294,14 @@ async function openDetailModal(id) {
         const isMine = window.currentUserId === item.user_id;
         document.getElementById('detailDeleteBtn').style.display = isMine ? 'block' : 'none';
         document.getElementById('detailEditBtn').style.display = isMine ? 'block' : 'none';
+        
+        // 끌어올리기 버튼 제어 및 클릭 이벤트 매핑
+        const bumpBtn = document.getElementById('detailBumpBtn');
+        if (bumpBtn) {
+            bumpBtn.style.display = isMine ? 'block' : 'none';
+            bumpBtn.onclick = () => { handleBumpCommission(item.id, item.bumped_at); };
+        }
+
         document.getElementById('detailDeleteBtn').onclick = () => { closeModal('detailModal'); handleDeleteCommission(item.id, item.title); };
         document.getElementById('detailEditBtn').onclick = () => { closeModal('detailModal'); setupEditMode(item); };
 
@@ -305,7 +315,6 @@ async function openDetailModal(id) {
             ? (item.image_url.includes(',') ? item.image_url.split(',') : [item.image_url])
             : ['https://placehold.co/400x300/fbcfe8/fff?text=No+Image'];
 
-        // 🌟 [핵심 변경]: 이미지 태그 생성 시 고유 주소 리스트와 클릭한 인덱스를 가지고 openImageViewer를 호출하게 조치
         imgs.forEach((url, idx) => { 
             slider.innerHTML += `<img src="${url.trim()}" class="w-full h-full object-cover flex-shrink-0 snap-center cursor-zoom-in" onclick="openImageViewer(${JSON.stringify(imgs).replace(/"/g, '&quot;')}, ${idx})">`; 
         });
@@ -362,7 +371,39 @@ async function openDetailModal(id) {
     } catch (e) { alert("상세화면을 열지 못했습니다: " + e.message); }
 }
 
-// 🌟 [부활]: 이미지 풀스크린 터치 스냅 스와이프 및 화살표 가동 뷰어 엔진
+// ⬆️ 커미션 최신글로 끌어올리기 기능 구현 (이틀/48시간 제한 시간 계산 포함)
+async function handleBumpCommission(id, lastBumpedAt) {
+    if (lastBumpedAt) {
+        const lastDate = new Date(lastBumpedAt);
+        const now = new Date();
+        const diffMs = now - lastDate;
+        const hoursLeft = 48 - (diffMs / (1000 * 60 * 60));
+        
+        if (hoursLeft > 0) {
+            const minutesLeft = Math.ceil((hoursLeft % 1) * 60);
+            return alert(`⚠️ 커미션 끌어올리기는 이틀에 한 번만 가능합니다.\n\n재사용 가능까지 남은 시간: ${Math.floor(hoursLeft)}시간 ${minutesLeft}분`);
+        }
+    }
+
+    if (!confirm("이 커미션 타입을 목록 최상단으로 끌어올리시겠습니까?")) return;
+
+    try {
+        const isoNow = new Date().toISOString();
+        const { error } = await getSupabaseClient()
+            .from('commissions')
+            .update({ bumped_at: isoNow })
+            .eq('id', id)
+            .eq('user_id', window.currentUserId);
+
+        if (error) throw error;
+        alert("성공적으로 최신 피드로 끌어올렸습니다! ✨");
+        closeModal('detailModal');
+        fetchCommissions();
+    } catch (err) {
+        alert("끌어올리기 처리 실패: " + err.message);
+    }
+}
+
 function openImageViewer(images, startIdx) {
     const existing = document.getElementById('imageViewerOverlay');
     if (existing) existing.remove();
@@ -383,9 +424,7 @@ function openImageViewer(images, startIdx) {
                    display:flex; align-items:center; justify-content:center; line-height:1; backdrop-filter:blur(4px);">✕</button>
         
         <div style="position:relative; width:100%; display:flex; align-items:center; justify-content:center; max-width:420px;">
-            
             ${images.length > 1 ? `<button id="viewerPrevBtn" style="position:absolute; left:12px; z-index:52000; color:white; font-size:24px; background:rgba(0,0,0,0.4); border:none; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:3px; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2);">‹</button>` : ''}
-            
             <div id="viewerSliderContainer" 
                  style="display:flex; width:100%; height:75vh; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch;" 
                  class="scrollbar-none">
@@ -395,10 +434,8 @@ function openImageViewer(images, startIdx) {
                     </div>
                 `).join('')}
             </div>
-            
             ${images.length > 1 ? `<button id="viewerNextBtn" style="position:absolute; right:12px; z-index:52000; color:white; font-size:24px; background:rgba(0,0,0,0.4); border:none; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:3px; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2);">›</button>` : ''}
         </div>
-        
         ${images.length > 1 ? `<p id="viewerIndicator" style="color:rgba(255,255,255,0.6); font-size:13px; font-weight:bold; margin-top:16px; font-family:sans-serif; letter-spacing:1px; z-index:52000;">${startIdx + 1} / ${images.length}</p>` : ''}
     `;
 
@@ -407,11 +444,8 @@ function openImageViewer(images, startIdx) {
     const slider = overlay.querySelector('#viewerSliderContainer');
     const indicator = overlay.querySelector('#viewerIndicator');
 
-    // 지정 좌표로 초기 시작 슬라이더 정렬 이동
     if (slider) {
         setTimeout(() => { slider.scrollLeft = slider.clientWidth * startIdx; }, 20);
-
-        // 손가락 밀어서 넘겼을 때 실시간 장수 동기화 카운팅
         slider.onscroll = () => {
             if (indicator) {
                 const page = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
@@ -420,7 +454,6 @@ function openImageViewer(images, startIdx) {
         };
     }
 
-    // 회색 버튼 눌러서 앞뒤로 넘기기 클릭 이벤트 장착
     const prevBtn = overlay.querySelector('#viewerPrevBtn');
     const nextBtn = overlay.querySelector('#viewerNextBtn');
 
@@ -428,11 +461,8 @@ function openImageViewer(images, startIdx) {
         prevBtn.onclick = (e) => {
             e.stopPropagation();
             const currentPage = Math.round(slider.scrollLeft / slider.clientWidth);
-            if (currentPage > 0) {
-                slider.scrollLeft = slider.clientWidth * (currentPage - 1);
-            } else {
-                slider.scrollLeft = slider.clientWidth * (images.length - 1); // 첫장에서 누르면 마지막 장으로 회전
-            }
+            if (currentPage > 0) { slider.scrollLeft = slider.clientWidth * (currentPage - 1); }
+            else { slider.scrollLeft = slider.clientWidth * (images.length - 1); }
         };
     }
 
@@ -440,17 +470,13 @@ function openImageViewer(images, startIdx) {
         nextBtn.onclick = (e) => {
             e.stopPropagation();
             const currentPage = Math.round(slider.scrollLeft / slider.clientWidth);
-            if (currentPage < images.length - 1) {
-                slider.scrollLeft = slider.clientWidth * (currentPage + 1);
-            } else {
-                slider.scrollLeft = 0; // 마지막 장에서 누르면 첫 장으로 회전
-            }
+            if (currentPage < images.length - 1) { slider.scrollLeft = slider.clientWidth * (currentPage + 1); }
+            else { slider.scrollLeft = 0; }
         };
     }
 
     const closeBtn = overlay.querySelector('#viewerCloseBtn');
     if (closeBtn) closeBtn.onclick = () => overlay.remove();
-
     overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
     const escHandler = (e) => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); } };
     document.addEventListener('keydown', escHandler);
@@ -546,8 +572,9 @@ async function fetchReviews(commissionId) {
             const stars = "⭐".repeat(Math.min(r.rating || 5, 5));
             const isReviewMine = window.currentUserId === r.writer_id;
 
+            // object-contain 부여 및 클릭 차단(pointer-events-none) 처리 적용 완료
             const reviewImg = r.image_url
-                ? `<img src="${r.image_url}" class="mt-1.5 w-full max-h-32 object-cover rounded-lg border border-gray-100 cursor-pointer" onclick="window.open('${r.image_url}','_blank')">`
+                ? `<img src="${r.image_url}" class="mt-1.5 w-full max-h-48 object-contain rounded-lg border border-gray-100 pointer-events-none select-none" style="cursor: default;">`
                 : '';
 
             const actionBtns = isReviewMine
@@ -568,7 +595,7 @@ async function fetchReviews(commissionId) {
                 </div>`;
         }).join('');
     } catch (e) {
-        console.error("fetchReviews 예외:", e);
+        console.error("후기 예외:", e);
         container.innerHTML = "<p class='text-[10px] text-red-400 text-center py-2'>후기 조회 중 오류가 발생했습니다.</p>";
     }
 }
@@ -667,7 +694,7 @@ async function handleCreateReview(e) {
 
         fetchReviews(commId);
     } catch (err) {
-        console.error("후기 등록/수정 오류:", err);
+        console.error("후기 처리 오류:", err);
         alert("후기 처리 실패: " + err.message);
     } finally {
         if (submitBtn) {
