@@ -10,14 +10,14 @@ function makeEmail(username) {
     return hex + '@joody.com';
 }
 
-// 현재 로그인한 유저 확인 및 UI 변경 (🌟 동시 오픈 버그 제어형으로 깔끔 분리)
+// 현재 로그인한 유저 확인 및 UI 변경
 async function checkUser() {
     try {
         const { data: { user } } = await getSupabase().auth.getUser();
         const loginBtn = document.getElementById('loginBtn');
 
         if (user) {
-            const { data: profile, error } = await getSupabase()
+            const { data: profile } = await getSupabase()
                 .from('profiles')
                 .select('username, role')
                 .eq('id', user.id)
@@ -29,7 +29,6 @@ async function checkUser() {
                 window.currentUserId = user.id;
                 window.currentUsername = profile.username;
             }
-            // 🌟 프로필을 클릭했을 때는 동시 팝업 대신 계정 메뉴 전용 창만 딱 뜨도록 설정
             loginBtn.onclick = () => openProfileMenu();
         } else {
             loginBtn.innerText = "로그인/가입";
@@ -47,10 +46,21 @@ async function checkUser() {
 function openProfileMenu() {
     const isCommissioner = window.currentUserRole === 'commissioner' || window.currentUserRole === 'both';
     const menuBtn = document.getElementById('menuMyTypes');
-    if (menuBtn) {
-        menuBtn.style.display = isCommissioner ? 'block' : 'none';
-    }
+    if (menuBtn) menuBtn.style.display = isCommissioner ? 'block' : 'none';
     openModal('profileMenuModal');
+}
+
+// ✅ [신규] 비밀번호 보기/숨기기 토글
+function togglePasswordVisibility(inputId, toggleBtn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        toggleBtn.innerText = '🙈';
+    } else {
+        input.type = 'password';
+        toggleBtn.innerText = '👁️';
+    }
 }
 
 // 로그인/가입 처리
@@ -79,14 +89,12 @@ async function handleAuth(e) {
                     { id: authData.user.id, username, role, contact_info: contact }
                 ]);
                 if (profError) throw profError;
-                
                 alert(`가입 성공! 이제 [${username}] 닉네임으로 로그인을 진행해주세요.`);
-                toggleAuthMode(); 
+                toggleAuthMode();
             }
         } else {
             const { error } = await getSupabase().auth.signInWithPassword({ email, password });
             if (error) throw new Error("닉네임 또는 비밀번호가 올바르지 않습니다.");
-
             alert("로그인되었습니다! 🎀");
             closeModal('authModal');
             document.getElementById('authForm').reset();
@@ -102,7 +110,6 @@ async function handleLogout() {
     location.reload();
 }
 
-// 🚨 [신규 기능 추가] 안전장치 2단 계정 탈퇴 파괴자 엔진 실장 완료
 async function handleWithdrawal() {
     const checkPw = prompt("🚨 계정을 정말 탈퇴하시겠습니까?\n작성하신 모든 커미션 타입과 계정 정보가 즉시 파기되며 복구할 수 없습니다.\n본인 확인을 위해 비밀번호를 입력해주세요:");
     if (!checkPw) return;
@@ -111,11 +118,9 @@ async function handleWithdrawal() {
         const { data: { user } } = await getSupabase().auth.getUser();
         if (!user) return alert("유저 세션이 만료되었습니다. 다시 로그인 후 시도해주세요.");
 
-        // 1차 비밀번호 세션 검증 확인차 재인증 시도
         const { error: reAuthErr } = await getSupabase().auth.signInWithPassword({ email: user.email, password: checkPw });
         if (reAuthErr) return alert("비밀번호가 일치하지 않아 탈퇴 처리가 취소되었습니다.");
 
-        // 2차 profiles 테이블 데이터 즉각 파쇄 (종속 커미션 데이터는 DB cascade 옵션 설정에 따름)
         const { error: dbErr } = await getSupabase().from('profiles').delete().eq('id', user.id);
         if (dbErr) throw dbErr;
 
@@ -146,7 +151,7 @@ function toggleAuthMode() {
     }
 }
 
-// 내 타입 목록 관리 팝업 대시보드
+// 내 타입 목록 관리
 async function openMyTypes() {
     closeModal('profileMenuModal');
     const container = document.getElementById('myTypesList');
@@ -157,7 +162,7 @@ async function openMyTypes() {
     try {
         const { data, error } = await getSupabase()
             .from('commissions')
-            .select('id, title, price, slot_type, max_slots, current_slots, is_closed, is_private')
+            .select('id, title, price, slot_type, max_slots, current_slots, is_closed, is_private, bumped_at')
             .eq('user_id', window.currentUserId)
             .order('created_at', { ascending: false });
         if (error) throw error;
@@ -169,9 +174,22 @@ async function openMyTypes() {
 
         container.innerHTML = data.map(item => {
             const slotText = item.slot_type === 'always' ? '상시' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}개`;
-            const closedBadge = item.is_closed ? `<span class="text-[10px] bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-bold">마감</span>` : `<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">모집중</span>`;
-            const privateBadge = item.is_private ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>` : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
-                
+            const closedBadge = item.is_closed
+                ? `<span class="text-[10px] bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-bold">마감</span>`
+                : `<span class="text-[10px] bg-green-100 text-green-600 px-2 py-0.5 rounded-full font-bold">모집중</span>`;
+            const privateBadge = item.is_private
+                ? `<span class="text-[10px] bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full font-bold">비공개</span>`
+                : `<span class="text-[10px] bg-blue-50 text-blue-400 px-2 py-0.5 rounded-full font-bold">공개중</span>`;
+
+            // ✅ [신규] 끌올 버튼: 마지막 끌올 시각 체크 (이틀 1회)
+            const now = new Date();
+            const bumpedAt = item.bumped_at ? new Date(item.bumped_at) : null;
+            const hoursSinceBump = bumpedAt ? (now - bumpedAt) / (1000 * 60 * 60) : 999;
+            const canBump = hoursSinceBump >= 48;
+            const bumpBtn = canBump
+                ? `<button onclick="handleBumpCommission(${item.id})" class="text-[11px] bg-green-50 text-green-600 px-2.5 py-1 rounded-lg font-bold hover:bg-green-100">⬆️ 끌올</button>`
+                : `<button disabled class="text-[11px] bg-gray-100 text-gray-400 px-2.5 py-1 rounded-lg font-bold cursor-not-allowed" title="이틀에 한 번만 끌올 가능합니다">⬆️ 끌올 대기중</button>`;
+
             return `
                 <div class="bg-gray-50 rounded-xl p-3 flex flex-col gap-2.5 border border-gray-100">
                     <div class="flex justify-between items-start">
@@ -181,10 +199,12 @@ async function openMyTypes() {
                         </div>
                         <div class="flex gap-1">${closedBadge} ${privateBadge}</div>
                     </div>
-                    <div class="flex justify-between items-center pt-2 border-t border-dashed border-gray-200">
-                        <div class="flex gap-2">
-                            <button onclick="closeModal('myTypesModal'); if(typeof setupEditMode === 'function') setupEditMode(${JSON.stringify(item).replace(/"/g, '&quot;')});" class="text-[11px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg font-bold hover:bg-blue-100">✏️ 타입 수정</button>
+                    <div class="flex flex-wrap justify-between items-center pt-2 border-t border-dashed border-gray-200 gap-2">
+                        <div class="flex gap-2 flex-wrap">
+                            <button onclick="closeModal('myTypesModal'); if(typeof setupEditMode === 'function') setupEditMode(${JSON.stringify(item).replace(/"/g, '&quot;')});" class="text-[11px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg font-bold hover:bg-blue-100">✏️ 수정</button>
                             <button onclick="if(typeof handleDeleteCommission === 'function') handleDeleteCommission(${item.id}, '${item.title}')" class="text-[11px] bg-red-50 text-red-500 px-2.5 py-1 rounded-lg font-bold hover:bg-red-100">🗑️ 삭제</button>
+                            ${bumpBtn}
+                            <button onclick="shareCommissionLink(${item.id}, '${item.title.replace(/'/g, "\\'")}')" class="text-[11px] bg-purple-50 text-purple-600 px-2.5 py-1 rounded-lg font-bold hover:bg-purple-100">🔗 공유</button>
                         </div>
                         <div class="flex gap-3">
                             <button onclick="toggleClosedStatus(${item.id}, ${item.is_closed})" class="text-[10px] text-gray-500 underline hover:text-pink-500">${item.is_closed ? '마감 해제' : '슬롯 마감'}</button>
@@ -194,6 +214,21 @@ async function openMyTypes() {
                 </div>`;
         }).join('');
     } catch (err) { container.innerHTML = "<p class='text-xs text-red-400 text-center py-4'>목록 로드 실패</p>"; }
+}
+
+// ✅ [신규] 끌올 처리
+async function handleBumpCommission(id) {
+    try {
+        const { error } = await getSupabase()
+            .from('commissions')
+            .update({ bumped_at: new Date().toISOString() })
+            .eq('id', id)
+            .eq('user_id', window.currentUserId);
+        if (error) throw error;
+        alert("끌어올리기 완료! 최상단에 노출됩니다 ⬆️");
+        await openMyTypes();
+        if (typeof fetchCommissions === 'function') fetchCommissions();
+    } catch (err) { alert("끌올 실패: " + err.message); }
 }
 
 async function toggleClosedStatus(id, currentStatus) {
@@ -214,6 +249,29 @@ async function togglePrivateStatus(id, currentStatus) {
     } catch (err) { alert("비공개 상태 변경 실패: " + err.message); }
 }
 
+// ✅ [신규] 커미션/프로필 공유 링크 복사
+function shareCommissionLink(commissionId, title) {
+    const url = `${location.origin}${location.pathname}?commission=${commissionId}`;
+    if (navigator.share) {
+        navigator.share({ title: `주디 커미션 - ${title}`, url });
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => alert(`링크가 복사되었습니다!\n\n${url}`));
+    } else {
+        prompt("아래 링크를 복사해서 공유하세요:", url);
+    }
+}
+
+function shareProfileLink(userId, username) {
+    const url = `${location.origin}${location.pathname}?artist=${userId}`;
+    if (navigator.share) {
+        navigator.share({ title: `주디 커미션 - ${username} 작가`, url });
+    } else if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => alert(`프로필 링크가 복사되었습니다!\n\n${url}`));
+    } else {
+        prompt("아래 링크를 복사해서 공유하세요:", url);
+    }
+}
+
 // ✏️ 정보 수정 모달 열기
 async function openEditProfile() {
     closeModal('profileMenuModal');
@@ -223,16 +281,16 @@ async function openEditProfile() {
         if (profile) {
             document.getElementById('editUsername').value = profile.username || '';
             document.getElementById('editContact').value = profile.contact_info || '';
-            document.getElementById('editResponseTime').value = profile.response_time || ''; 
+            document.getElementById('editResponseTime').value = profile.response_time || '';
         }
         document.getElementById('editPassword').value = '';
         openModal('editProfileModal');
-    } catch (e) { alert("profiles 캐시를 가져오지 못했습니다."); }
+    } catch (e) { alert("정보를 가져오지 못했습니다."); }
 }
 
-// ✏️ 정보 수정 저장 (🌟 이제 연동 에러 없이 완벽 저장 작동!)
+// ✏️ 정보 수정 저장
 async function handleEditProfile(e) {
-    if(e) e.preventDefault();
+    if (e) e.preventDefault();
     const newUsername = document.getElementById('editUsername').value.trim();
     const newContact = document.getElementById('editContact').value.trim();
     const newResponseTime = document.getElementById('editResponseTime').value.trim();
@@ -254,7 +312,6 @@ async function handleEditProfile(e) {
             const newEmail = makeEmail(newUsername);
             const updateData = { email: newEmail };
             if (newPassword.trim()) updateData.password = newPassword;
-
             const { error: pwError } = await getSupabase().auth.updateUser(updateData);
             if (pwError) throw pwError;
         }
