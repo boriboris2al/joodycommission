@@ -147,7 +147,6 @@ if (isSignUp) {
         if (typeof fetchCommissions === 'function')
             fetchCommissions();
     }
-        }
     } catch (error) { alert("인증 실패: " + error.message); }
 }
 
