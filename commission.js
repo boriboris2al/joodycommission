@@ -181,39 +181,52 @@ async function fetchCommissions() {
             return;
         }
 
-        listEl.innerHTML = filteredData.map(item => {
-            const artistName = item.profiles ? item.profiles.username : '알 수 없음';
-            let firstImg = 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
-            if (item.image_url) {
-                firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
-            }
-            const slotText = item.slot_type === 'always' ? '상시 모집' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`;
-            const statusBadge = item.is_closed
-                ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">마감</span>`
-                : `<span class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">모집중</span>`;
-            const tagsHtml = (item.tags && item.tags.length > 0)
-                ? item.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ')
-                : '';
-            const bumpedBadge = item.bumped_at
-                ? `<span class="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full"> bump </span>`
-                : '';
-
-            return `
-                <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col" onclick="openDetailModal(${item.id})">
-                    <div class="relative w-full h-48 bg-gray-50 overflow-hidden">
-                        <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
-                        <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">💎 ${item.price} 가치</span>
-                    </div>
-                    <div class="p-3.5 flex flex-col gap-1.5">
-                        <div class="flex justify-between items-center text-[11px]">
-                            <span class="text-pink-600 font-bold hover:underline" onclick="event.stopPropagation(); openArtistProfile('${item.user_id}');">🎨 ${artistName}</span>
-                            <div class="flex items-center gap-1">${bumpedBadge} ${statusBadge} <span class="text-gray-400 font-medium">${slotText}</span></div>
+            listEl.innerHTML = filteredData.map(item => {
+                const artistName = item.profiles ? item.profiles.username : '알 수 없음';
+                let firstImg = 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
+                if (item.image_url) {
+                    firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
+                }
+                
+                // 1. 슬롯 마감 상태 확인 (is_closed 데이터 혹은 슬롯 수 비교)
+                const isClosed = item.is_closed || (item.slot_type === 'limited' && item.current_slots >= item.max_slots);
+                
+                // 2. 마감 레이어 HTML (검정 불투명도 60% + 텍스트)
+                const closedOverlay = isClosed ? `
+                    <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[1px]">
+                        <span class="text-4xl mb-1">🔒</span>
+                        <span class="text-white font-bold text-sm">슬롯 마감</span>
+                    </div>` : '';
+            
+                const slotText = item.slot_type === 'always' ? '상시 모집' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`;
+                const statusBadge = isClosed
+                    ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">마감</span>`
+                    : `<span class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">모집중</span>`;
+                
+                const tagsHtml = (item.tags && item.tags.length > 0)
+                    ? item.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ')
+                    : '';
+                const bumpedBadge = item.bumped_at
+                    ? `<span class="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full"> bump </span>`
+                    : '';
+            
+                return `
+                    <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col" onclick="openDetailModal(${item.id})">
+                        <div class="relative w-full h-48 bg-gray-50 overflow-hidden">
+                            ${closedOverlay}
+                            <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
+                            <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">💎 ${item.price} 가치</span>
                         </div>
-                        <h3 class="text-sm font-bold text-gray-900 line-clamp-1">${item.title}</h3>
-                        <div class="flex flex-wrap gap-1 mt-0.5">${tagsHtml}</div>
-                    </div>
-                </div>`;
-        }).join('');
+                        <div class="p-3.5 flex flex-col gap-1.5">
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="text-pink-600 font-bold hover:underline" onclick="event.stopPropagation(); openArtistProfile('${item.user_id}');">🎨 ${artistName}</span>
+                                <div class="flex items-center gap-1">${bumpedBadge} ${statusBadge} <span class="text-gray-400 font-medium">${slotText}</span></div>
+                            </div>
+                            <h3 class="text-sm font-bold text-gray-900 line-clamp-1">${item.title}</h3>
+                            <div class="flex flex-wrap gap-1 mt-0.5">${tagsHtml}</div>
+                        </div>
+                    </div>`;
+            }).join('');
     } catch (err) {
         console.error("fetchCommissions 오류:", err);
         listEl.innerHTML = "<p class='text-xs text-red-400 text-center py-10'>데이터 요청 중 에러 발생</p>";
