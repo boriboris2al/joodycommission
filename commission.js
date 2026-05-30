@@ -77,16 +77,15 @@ function changeFilter(btn, mode) {
     }
 }
 
+// ✅ 수정1: 정렬 버튼 클래스를 y2k-nametag 기반으로 통일 (기존 bg-pink-500 충돌 제거)
 function changeSortMode(mode) {
     window.currentSortMode = mode;
     document.querySelectorAll('.sort-btn').forEach(b => {
-        b.classList.remove('bg-pink-500', 'text-white', 'shadow-sm');
-        b.classList.add('bg-white', 'text-gray-600', 'border', 'border-gray-200');
+        b.className = "sort-btn bg-white text-gray-600 border-2 border-pink-100 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap";
     });
     const activeBtn = document.getElementById(`sort-${mode}`);
     if (activeBtn) {
-        activeBtn.classList.remove('bg-white', 'text-gray-600', 'border', 'border-gray-200');
-        activeBtn.classList.add('bg-pink-500', 'text-white', 'shadow-sm');
+        activeBtn.className = "sort-btn y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-xs";
     }
     fetchCommissions();
 }
@@ -167,6 +166,7 @@ async function fetchCommissions() {
         } else if (sortMode === 'bookmarks') {
             filteredData.sort((a, b) => (b.bookmark_count || 0) - (a.bookmark_count || 0));
         } else if (sortMode === 'popular') {
+            // ✅ 수정1: view_count는 * select에 포함되므로 정상 작동
             filteredData.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
         } else if (sortMode === 'latest') {
             filteredData.sort((a, b) => {
@@ -181,52 +181,50 @@ async function fetchCommissions() {
             return;
         }
 
-            listEl.innerHTML = filteredData.map(item => {
-                const artistName = item.profiles ? item.profiles.username : '알 수 없음';
-                let firstImg = 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
-                if (item.image_url) {
-                    firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
-                }
-                
-                // 1. 슬롯 마감 상태 확인 (is_closed 데이터 혹은 슬롯 수 비교)
-                const isClosed = item.is_closed || (item.slot_type === 'limited' && item.current_slots >= item.max_slots);
-                
-                // 2. 마감 레이어 HTML (검정 불투명도 60% + 텍스트)
-                const closedOverlay = isClosed ? `
-                    <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[1px]">
-                        <span class="text-4xl mb-1">🔒</span>
-                        <span class="text-white font-bold text-sm">슬롯 마감</span>
-                    </div>` : '';
+        listEl.innerHTML = filteredData.map(item => {
+            const artistName = item.profiles ? item.profiles.username : '알 수 없음';
+            let firstImg = 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
+            if (item.image_url) {
+                firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
+            }
             
-                const slotText = item.slot_type === 'always' ? '상시 모집' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`;
-                const statusBadge = isClosed
-                    ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">마감</span>`
-                    : `<span class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">모집중</span>`;
-                
-                const tagsHtml = (item.tags && item.tags.length > 0)
-                    ? item.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ')
-                    : '';
-                const bumpedBadge = item.bumped_at
-                    ? `<span class="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full"> bump </span>`
-                    : '';
+            const isClosed = item.is_closed || (item.slot_type === 'limited' && item.current_slots >= item.max_slots);
             
-                return `
-                    <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col" onclick="openDetailModal(${item.id})">
-                        <div class="relative w-full h-48 bg-gray-50 overflow-hidden">
-                            ${closedOverlay}
-                            <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
-                            <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">💎 ${item.price} 가치</span>
+            const closedOverlay = isClosed ? `
+                <div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[1px]">
+                    <span class="text-4xl mb-1">🔒</span>
+                    <span class="text-white font-bold text-sm">슬롯 마감</span>
+                </div>` : '';
+        
+            const slotText = item.slot_type === 'always' ? '상시 모집' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`;
+            const statusBadge = isClosed
+                ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">마감</span>`
+                : `<span class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">모집중</span>`;
+            
+            const tagsHtml = (item.tags && item.tags.length > 0)
+                ? item.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ')
+                : '';
+            const bumpedBadge = item.bumped_at
+                ? `<span class="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full"> bump </span>`
+                : '';
+        
+            return `
+                <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col" onclick="openDetailModal(${item.id})">
+                    <div class="relative w-full h-48 bg-gray-50 overflow-hidden">
+                        ${closedOverlay}
+                        <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
+                        <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">💎 ${item.price} 가치</span>
+                    </div>
+                    <div class="p-3.5 flex flex-col gap-1.5">
+                        <div class="flex justify-between items-center text-[11px]">
+                            <span class="text-pink-600 font-bold hover:underline" onclick="event.stopPropagation(); openArtistProfile('${item.user_id}');">🎨 ${artistName}</span>
+                            <div class="flex items-center gap-1">${bumpedBadge} ${statusBadge} <span class="text-gray-400 font-medium">${slotText}</span></div>
                         </div>
-                        <div class="p-3.5 flex flex-col gap-1.5">
-                            <div class="flex justify-between items-center text-[11px]">
-                                <span class="text-pink-600 font-bold hover:underline" onclick="event.stopPropagation(); openArtistProfile('${item.user_id}');">🎨 ${artistName}</span>
-                                <div class="flex items-center gap-1">${bumpedBadge} ${statusBadge} <span class="text-gray-400 font-medium">${slotText}</span></div>
-                            </div>
-                            <h3 class="text-sm font-bold text-gray-900 line-clamp-1">${item.title}</h3>
-                            <div class="flex flex-wrap gap-1 mt-0.5">${tagsHtml}</div>
-                        </div>
-                    </div>`;
-            }).join('');
+                        <h3 class="text-sm font-bold text-gray-900 line-clamp-1">${item.title}</h3>
+                        <div class="flex flex-wrap gap-1 mt-0.5">${tagsHtml}</div>
+                    </div>
+                </div>`;
+        }).join('');
     } catch (err) {
         console.error("fetchCommissions 오류:", err);
         listEl.innerHTML = "<p class='text-xs text-red-400 text-center py-10'>데이터 요청 중 에러 발생</p>";
@@ -308,7 +306,6 @@ async function openDetailModal(id) {
         document.getElementById('detailDeleteBtn').style.display = isMine ? 'block' : 'none';
         document.getElementById('detailEditBtn').style.display = isMine ? 'block' : 'none';
         
-        // 끌어올리기 버튼 제어 및 클릭 이벤트 매핑
         const bumpBtn = document.getElementById('detailBumpBtn');
         if (bumpBtn) {
             bumpBtn.style.display = isMine ? 'block' : 'none';
@@ -384,7 +381,8 @@ async function openDetailModal(id) {
     } catch (e) { alert("상세화면을 열지 못했습니다: " + e.message); }
 }
 
-// ⬆️ 커미션 최신글로 끌어올리기 기능 구현 (이틀/48시간 제한 시간 계산 포함)
+// ✅ 충돌정리: commission.js의 handleBumpCommission 단일 정의 (48시간 체크 포함)
+// auth.js의 동명 함수는 삭제 처리 — 이 함수가 모달/대시보드 양쪽에서 모두 사용됨
 async function handleBumpCommission(id, lastBumpedAt) {
     if (lastBumpedAt) {
         const lastDate = new Date(lastBumpedAt);
@@ -501,12 +499,10 @@ async function BookmarkBtn(commissionId) {
     try {
         const { data } = await getSupabaseClient().from('bookmarks').select('id').eq('user_id', window.currentUserId).eq('commission_id', commissionId).maybeSingle();
         if (data) {
-            // 북마크 되어있을 때: 핑크색 테마(y2k-nametag) + 북마크 해제 문구
             btn.innerText = "★ 북마크 해제";
             btn.className = "px-2.5 py-1 rounded-full text-[10px] font-bold transition-all y2k-nametag";
             btn.onclick = () => removeBookmark(data.id, commissionId);
         } else {
-            // 북마크 안 되어있을 때: 밝은 노란색 테마(btn-y2k-yellow) + 북마크 문구
             btn.innerText = "★ 북마크";
             btn.className = "px-2.5 py-1 rounded-full text-[10px] font-bold transition-all btn-y2k-yellow";
             btn.onclick = () => addBookmark(commissionId);
@@ -562,7 +558,6 @@ async function fetchReviews(commissionId) {
             .order('created_at', { ascending: false });
 
         if (error) {
-            console.error("후기 조회 오류:", error);
             container.innerHTML = `<p class='text-[10px] text-red-400 text-center py-2'>후기 불러오기 실패 (${error.message})</p>`;
             return;
         }
@@ -587,7 +582,6 @@ async function fetchReviews(commissionId) {
             const stars = "⭐".repeat(Math.min(r.rating || 5, 5));
             const isReviewMine = window.currentUserId === r.writer_id;
 
-            // object-contain 부여 및 클릭 차단(pointer-events-none) 처리 적용 완료
             const reviewImg = r.image_url
                 ? `<img src="${r.image_url}" class="mt-1.5 w-full max-h-48 object-contain rounded-lg border border-gray-100 pointer-events-none select-none" style="cursor: default;">`
                 : '';
@@ -610,7 +604,6 @@ async function fetchReviews(commissionId) {
                 </div>`;
         }).join('');
     } catch (e) {
-        console.error("후기 예외:", e);
         container.innerHTML = "<p class='text-[10px] text-red-400 text-center py-2'>후기 조회 중 오류가 발생했습니다.</p>";
     }
 }
@@ -709,7 +702,6 @@ async function handleCreateReview(e) {
 
         fetchReviews(commId);
     } catch (err) {
-        console.error("후기 처리 오류:", err);
         alert("후기 처리 실패: " + err.message);
     } finally {
         if (submitBtn) {
