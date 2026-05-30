@@ -71,35 +71,82 @@ async function handleAuth(e) {
     const isSignUp = !document.getElementById('authExtraContainer').classList.contains('hidden');
 
     if (!username || !password) return alert("빈칸을 모두 채워주세요!");
-    const email = makeEmail(username);
-
     try {
-        if (isSignUp) {
-            const contact = document.getElementById('authContact').value.trim();
-            const role = document.getElementById('authRole').value;
+if (isSignUp) {
+    const contact = document.getElementById('authContact').value.trim();
+    const role = document.getElementById('authRole').value;
 
-            const { data: existing } = await getSupabase().from('profiles').select('id').eq('username', username).maybeSingle();
-            if (existing) return alert("이미 사용 중인 닉네임입니다!");
+    const { data: existing } = await getSupabase()
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
 
-            const { data: authData, error: authError } = await getSupabase().auth.signUp({ email, password });
-            if (authError) throw authError;
+    if (existing)
+        return alert("이미 사용 중인 닉네임입니다!");
 
-            if (authData.user) {
-                const { error: profError } = await getSupabase().from('profiles').insert([
-                    { id: authData.user.id, username, role, contact_info: contact }
+    const email = crypto.randomUUID() + '@joody.com';
+
+    const { data: authData, error: authError } =
+        await getSupabase().auth.signUp({
+            email,
+            password
+        });
+
+    if (authError) throw authError;
+
+    if (authData.user) {
+        const { error: profError } =
+            await getSupabase()
+                .from('profiles')
+                .insert([
+                    {
+                        id: authData.user.id,
+                        username,
+                        login_email: email,
+                        role,
+                        contact_info: contact
+                    }
                 ]);
-                if (profError) throw profError;
-                alert(`가입 성공! 이제 [${username}] 닉네임으로 로그인을 진행해주세요.`);
-                toggleAuthMode();
-            }
-        } else {
-            const { error } = await getSupabase().auth.signInWithPassword({ email, password });
-            if (error) throw new Error("닉네임 또는 비밀번호가 올바르지 않습니다.");
-            alert("로그인되었습니다! 🎀");
-            closeModal('authModal');
-            document.getElementById('authForm').reset();
-            await checkUser();
-            if (typeof fetchCommissions === 'function') fetchCommissions();
+
+        if (profError) throw profError;
+
+        alert(`가입 성공! 이제 [${username}] 닉네임으로 로그인을 진행해주세요.`);
+        toggleAuthMode();
+    }
+    } else {
+
+        const { data: profile } =
+            await getSupabase()
+                .from('profiles')
+                .select('login_email')
+                .eq('username', username)
+                .maybeSingle();
+
+        if (!profile?.login_email)
+            throw new Error("존재하지 않는 닉네임입니다.");
+
+        const { error } =
+            await getSupabase()
+                .auth
+                .signInWithPassword({
+                    email: profile.login_email,
+                    password
+                });
+
+        if (error)
+            throw new Error("닉네임 또는 비밀번호가 올바르지 않습니다.");
+
+        alert("로그인되었습니다! 🎀");
+
+        closeModal('authModal');
+        document.getElementById('authForm').reset();
+
+        await checkUser();
+
+        if (typeof fetchCommissions === 'function')
+            fetchCommissions();
+    }
         }
     } catch (error) { alert("인증 실패: " + error.message); }
 }
@@ -297,14 +344,14 @@ async function handleEditProfile(e) {
             .eq('id', window.currentUserId);
         if (profError) throw profError;
 
-        if (newPassword.trim() || newUsername !== window.currentUsername) {
-            const newEmail = makeEmail(newUsername);
-            const updateData = { email: newEmail };
-            if (newPassword.trim()) updateData.password = newPassword;
-            const { error: pwError } = await getSupabase().auth.updateUser(updateData);
-            if (pwError) throw pwError;
-        }
+        if (newPassword.trim()) {
+    const { error: pwError } =
+        await getSupabase().auth.updateUser({
+            password: newPassword
+        });
 
+    if (pwError) throw pwError;
+    }
         alert("회원 정보가 성공적으로 수정되었습니다! ✨");
         closeModal('editProfileModal');
         await checkUser();
