@@ -502,15 +502,15 @@
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative border-4 border-double border-pink-300 shadow-xl space-y-4">
             <button onclick="closeModal('artistProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl font-bold">✕</button>
             <div class="text-center border-b border-pink-300 pb-3 space-y-1.5">
-                <h2 id="artistNameTitle" class="text-lg font-bold text-pink-600">🎨 작가 홈피</h2>
+                <h2 id="artistNameTitle" class="text-lg font-bold text-pink-600">🎨 작가 프로필</h2>
                 <p id="artistRoleBadge" class="text-[10px] bg-pink-50 text-pink-500 border border-pink-300 inline-block px-2.5 py-0.5 rounded-full font-bold"></p>
                 <div>
-                    <button id="artistShareBtn" class="text-[10px] bg-purple-50 text-purple-600 px-3 py-1 rounded-full font-bold border border-purple-100 hover:bg-purple-100">🔗 홈피 링크 복사</button>
+                    <button id="artistShareBtn" class="text-[10px] bg-purple-50 text-purple-600 px-3 py-1 rounded-full font-bold border border-purple-100 hover:bg-purple-100">🔗 프로필 링크 복사</button>
                 </div>
             </div>
             <div class="space-y-2 text-xs">
                 <div class="bg-gray-50 p-3 rounded-xl border border-gray-200/60 space-y-1">
-                    <p class="font-bold text-gray-500">💬 소통 연락처</p>
+                    <p class="font-bold text-gray-500">💬 연락처</p>
                     <p id="artistContactInfo" class="text-gray-700 font-medium break-all select-all"></p>
                 </div>
                 <div class="bg-purple-50 p-3 rounded-xl border border-purple-100 space-y-1">
@@ -519,7 +519,7 @@
                 </div>
             </div>
             <div class="space-y-2 pt-2">
-                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 미니 룸에 전시된 타입들</h3>
+                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 작가의 타입 모아보기</h3>
                 <div id="artistCommissionsList" class="flex flex-col gap-4"></div>
             </div>
         </div>
@@ -530,11 +530,11 @@
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl font-bold">✕</button>
             <h2 class="text-lg font-bold text-pink-600 mb-4 border-b border-pink-300 pb-1">내 계정 관리 ☆</h2>
             <div class="space-y-2">
-                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm border border-pink-300 transition">🖼️ 내 커미션 관리 대시보드</button>
-                <button onclick="closeModal('profileMenuModal'); if(typeof openArtistProfile === 'function') openArtistProfile(window.currentUserId);" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">👤 내 프로필 카드 스크랩</button>
-                <button onclick="openEditProfile()" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">✏️ 내 개인정보 수정</button>
-                <button onclick="closeModal('profileMenuModal'); if(confirm('로그아웃 하시겠습니까?')) handleLogout();" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-400 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">🚪 시스템 로그아웃</button>
-                <button onclick="closeModal('profileMenuModal'); if(typeof handleWithdrawal === 'function') handleWithdrawal();" class="w-full text-left bg-red-50 hover:bg-red-100 text-red-500 font-bold p-3.5 rounded-xl text-sm border border-red-200 transition">🚨 데이터 영구 계정탈퇴</button>
+                <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm border border-pink-300 transition">🖼️ 내 커미션 관리</button>
+                <button onclick="closeModal('profileMenuModal'); if(typeof openArtistProfile === 'function') openArtistProfile(window.currentUserId);" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">👤 내 프로필 보기</button>
+                <button onclick="openEditProfile()" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">✏️ 개인정보 수정</button>
+                <button onclick="closeModal('profileMenuModal'); if(confirm('로그아웃 하시겠습니까?')) handleLogout();" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-400 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">🚪 로그아웃</button>
+                <button onclick="closeModal('profileMenuModal'); if(typeof handleWithdrawal === 'function') handleWithdrawal();" class="w-full text-left bg-red-50 hover:bg-red-100 text-red-500 font-bold p-3.5 rounded-xl text-sm border border-red-200 transition">🚨 계정 탈퇴</button>
             </div>
         </div>
     </div>
