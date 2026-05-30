@@ -49,9 +49,9 @@
             box-sizing: border-box;
         }
 
-        /* 본문 내용 가독성을 위한 KoPubWorld 폰트 강제 적용 */
+        /* 본문 내용 가독성을 위한 KoPubWorld 폰트 적용 */
         .kopub-readable, .kopub-readable *, #detailItem, #detailDeadline, #detailCredit, #detailOk, #detailNg, #detailDesc, #reviewList p, #reviewList span, input[type="text"], textarea {
-            font-family: 'KoPubWorldDotum', sans-serif !important;
+            font-family: 'KoPubWorldDotum', sans-serif;
             font-weight: 500;
         }
         
@@ -75,12 +75,12 @@
             position: relative;
         }
         
-        /* 상단 고정 헤더 영역 패턴 정의 및 겹침 현상 방지를 위한 최상위 z-index 부여 */
+        /* 상단 고정 헤더 영역 패턴 정의 및 최상위 z-index 부여 */
         .y2k-header-grid {
             background-color: #d8fbf9;
             background-image: radial-gradient(rgba(255, 140, 200, 0.7) 2.5px, transparent 2.5px);
             background-size: 18px 18px;
-            z-index: 10005 !important;
+            z-index: 10005;
         }
 
         /* 레이어 팝업 모달 기본 구조 및 배치 정렬 */
@@ -121,7 +121,7 @@
         #dropdown-기타 .floating-dropdown-panel { left: auto; right: 0; }
         .floating-dropdown-panel.hidden { display: none !important; }
         
-        /* 버튼 및 네임태그 요소 그라데이션 UI 효과 */
+        /* 버튼 및 네임태그 요소 입체 그라데이션 효과 */
         .y2k-nametag {
             background: linear-gradient(to bottom, #fbcfe8 0%, #f472b6 100%);
             border: 1px solid #db2777;
@@ -151,26 +151,43 @@
             letter-spacing: -0.5px;
         }
 
-        /* 제어 버튼별 파스텔톤 입체 테두리 공통 스타일 지정 */
+        /* 제어 버튼용 얇은 외곽선 + 내부 그라데이션 스타일 지정 */
         .btn-y2k-pink {
             background: linear-gradient(to bottom, #fff5f5 0%, #ffe3e3 100%);
-            border: 2px dashed #fca5a5;
+            border: 1px solid #fca5a5;
             color: #dc2626;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
         }
         .btn-y2k-blue {
             background: linear-gradient(to bottom, #f0f9ff 0%, #e0f2fe 100%);
-            border: 2px dashed #bae6fd;
+            border: 1px solid #bae6fd;
             color: #2563eb;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
         }
         .btn-y2k-green {
-            background: linear-gradient(to bottom, #f0fdf4 0%, #dcfce7 100%);
-            border: 2px dashed #bbf7d0;
-            color: #16a34a;
+            background: linear-gradient(to bottom, #fffbeb 0%, #fef3c7 100%);
+            border: 1px solid #fcd34d;
+            color: #d97706;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
         }
         .btn-y2k-purple {
-            background: linear-gradient(to bottom, #faf5ff 0%, #f3e8ff 100%);
-            border: 2px dashed #e9d5ff;
-            color: #9333ea;
+            background: linear-gradient(to bottom, #f0fdf4 0%, #dcfce7 100%);
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.04);
+        }
+
+        /* 후기 내부 첨부 이미지 비율 유지 및 클릭 비활성화 */
+        .review-attached-img {
+            object-fit: contain;
+            max-height: 240px;
+            width: 100%;
+            pointer-events: none;
+            cursor: default;
         }
 
         .sort-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -370,7 +387,7 @@
                     <button id="detailEditBtn" class="btn-y2k-blue px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">✏️ 수정</button>
                 </div>
                 <div class="flex gap-1.5 items-center">
-                    <button id="detailBookmarkBtn" class="btn-y2k-green px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🤍 북마크</button>
+                    <button id="detailBookmarkBtn" class="btn-y2k-green px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🤍 북마크 찜</button>
                     <button id="detailShareBtn" class="btn-y2k-purple px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🔗 공유</button>
                     <button onclick="closeModal('detailModal')" class="bg-white/90 text-gray-500 w-8 h-8 rounded-full flex items-center justify-center shadow-md font-bold text-lg border border-gray-200">✕</button>
                 </div>
