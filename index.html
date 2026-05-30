@@ -12,35 +12,31 @@
 
     <meta property="og:title" content="Joody Commission">
     <meta property="og:description" content="주디 커미션을 찾아보세요!">
-    <meta property="og:image" content="https://i.imgur.com/pwoBHoP.png"> <meta property="og:url" content="https://joodycommission.biggirldontcry.workers.dev/">
+    <meta property="og:image" content="https://i.imgur.com/pwoBHoP.png">
+    <meta property="og:url" content="https://joodycommission.biggirldontcry.workers.dev/">
     <meta property="og:type" content="website">
 
     <link rel="icon" type="image/png" href="https://i.imgur.com/O7pudNM.png">
     
     <style>
-        /* 메인 타이틀용 Cafe24ProSlim 웹폰트 정의 */
         @font-face {
             font-family: 'Cafe24ProSlim';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/Cafe24PROSlim-Light.woff2') format('woff2');
             font-weight: 300;
             font-display: swap;
         }
-
         @font-face {
             font-family: 'Cafe24ProSlim';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/Cafe24PROSlim-Regular.woff2') format('woff2');
             font-weight: 400;
             font-display: swap;
         }
-
         @font-face {
             font-family: 'Cafe24ProSlim';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/Cafe24PROSlim-Bold.woff2') format('woff2');
             font-weight: 700;
             font-display: swap;
         }
-
-        /* 기본 레이아웃 제어용 고전 도트 폰트 정의 */
         @font-face {
             font-family: 'RoundedFixedsys';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
@@ -48,7 +44,6 @@
             font-display: swap;
         }
 
-        /* 기본 폰트 설정 및 하위 요소 상속 */
         * {
             font-family: 'RoundedFixedsys', 'KoPubWorldDotum', sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -56,13 +51,11 @@
             box-sizing: border-box;
         }
 
-        /* 본문 내용 가독성을 위한 KoPubWorld 폰트 적용 */
         .kopub-readable, .kopub-readable *, #detailItem, #detailDeadline, #detailCredit, #detailOk, #detailNg, #detailDesc, #reviewList p, #reviewList span, input[type="text"], textarea {
             font-family: 'KoPubWorldDotum', sans-serif;
             font-weight: 500;
         }
         
-        /* 전체 페이지 배경: 흰색 바탕 및 분홍색 도트 패턴 설정 */
         body {
             background-color: #ffffff;
             background-image: radial-gradient(#fbcfe8 2px, transparent 2px);
@@ -70,27 +63,29 @@
             min-height: 100vh;
         }
 
-        /* 모바일 화면 규격 고정용 컨테이너 바디 */
+        /* ✅ 수정3: phone-container 높이 고정 + 내부 스크롤 구조 */
         .phone-container {
             max-width: 420px;
             margin: 0 auto;
             background-color: #ffffff;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
             border-left: 4px double #fbcfe8;
             border-right: 4px double #fbcfe8;
             box-shadow: 0 0 30px rgba(219, 39, 119, 0.1);
             position: relative;
+            display: flex;
+            flex-direction: column;
         }
         
-        /* 상단 고정 헤더 영역 패턴 정의 및 최상위 z-index 부여 */
         .y2k-header-grid {
             background-color: #d8fbf9;
             background-image: radial-gradient(rgba(255, 140, 200, 0.7) 2.5px, transparent 2.5px);
             background-size: 18px 18px;
             z-index: 10005;
+            flex-shrink: 0;
         }
 
-        /* 레이어 팝업 모달 기본 구조 및 배치 정렬 */
         .modal {
             display: none;
             position: fixed;
@@ -108,7 +103,6 @@
         .snap-center { scroll-snap-align: center; }
         .dropdown-container-box { position: relative; z-index: 9999; }
         
-        /* 카테고리 필터 선택 시 하단에 노출되는 드롭다운 패널 */
         .floating-dropdown-panel {
             position: absolute;
             top: 100%;
@@ -128,7 +122,6 @@
         #dropdown-기타 .floating-dropdown-panel { left: auto; right: 0; }
         .floating-dropdown-panel.hidden { display: none !important; }
         
-        /* 오리지널 핑크 입체 그라데이션 테마 (y2k 오리지널 서식) */
         .y2k-nametag {
             background: linear-gradient(to bottom, #fbcfe8 0%, #f472b6 100%) !important;
             border: 1px solid #db2777 !important;
@@ -136,9 +129,7 @@
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
             color: #ffffff !important;
         }
-        .y2k-nametag:hover {
-            opacity: 0.95;
-        }
+        .y2k-nametag:hover { opacity: 0.95; }
         .y2k-nametag-noborder {
             background: linear-gradient(to bottom, #fbcfe8 0%, #f472b6 100%) !important;
             border: none !important;
@@ -146,7 +137,6 @@
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
             color: #ffffff !important;
         }
-        /* 헤더 메인 타이틀 로고 전용 폰트 스타일 및 테두리 효과 */
         .y2k-main-title {
             font-family: 'Cafe24ProSlim', sans-serif !important;
             font-weight: 700;
@@ -164,7 +154,6 @@
             letter-spacing: -0.5px;
         }
 
-        /* 상세 모달 제어용 버튼 입체 그라데이션 컬러 라인업 개편 */
         .btn-y2k-pink {
             background: linear-gradient(to bottom, #fecaca 0%, #f87171 100%) !important;
             border: 1px solid #dc2626 !important;
@@ -201,7 +190,6 @@
             color: #ffffff !important;
         }
 
-        /* 후기 내부 첨부 이미지 비율 유지 및 클릭 비활성화 */
         .review-attached-img {
             object-fit: contain;
             max-height: 240px;
@@ -216,14 +204,15 @@
 </head>
 <body>
 
-    <div class="phone-container flex flex-col">
+    <div class="phone-container">
         <header class="y2k-header-grid p-4 sticky top-0 flex justify-between items-center border-b-4 border-double border-pink-300">
             <h1 class="text-xl font-bold y2k-main-title cursor-pointer transition-transform duration-100 active:scale-95" onclick="location.reload()">Joody Commission</h1>
             <button id="loginBtn" class="y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold transition-all">로그인/가입</button>
         </header>
 
-        <div id="sectionHome" class="flex-1 flex flex-col">
-            <main class="flex-1 p-4 pb-20 overflow-x-hidden">
+        <!-- ✅ 수정3: sectionHome flex-col + overflow-hidden, main에 overflow-y-auto -->
+        <div id="sectionHome" class="flex flex-col" style="flex: 1; overflow: hidden;">
+            <main class="p-4 overflow-x-hidden" style="flex: 1; overflow-y: auto; padding-bottom: 72px;">
                 <div id="searchBar" class="mb-4">
                     <input type="text" id="searchInput" placeholder="타입 이름 또는 작가 이름 검색..." class="w-full p-3 rounded-xl bg-white border border-pink-300 text-sm shadow-2xs focus:outline-none focus:border-pink-400">
                 </div>
@@ -280,14 +269,16 @@
             </main>
         </div>
 
-        <div id="sectionBookmark" class="flex-1 flex flex-col hidden">
-            <main class="flex-1 p-4 pb-20 overflow-x-hidden">
+        <!-- ✅ 수정3: sectionBookmark도 동일하게 -->
+        <div id="sectionBookmark" class="flex flex-col hidden" style="flex: 1; overflow: hidden;">
+            <main class="p-4 overflow-x-hidden" style="flex: 1; overflow-y: auto; padding-bottom: 72px;">
                 <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 내가 찜한 북마크</h2>
                 <div id="bookmarkList" class="flex flex-col gap-5"></div>
             </main>
         </div>
 
-        <nav class="absolute bottom-0 left-0 right-0 bg-white border-t-4 border-double border-pink-200 p-2 flex justify-around items-center z-50">
+        <!-- ✅ 수정3: absolute → flex-shrink:0 으로 플로우 안에 고정 -->
+        <nav style="flex-shrink: 0;" class="bg-white border-t-4 border-double border-pink-200 p-2 flex justify-around items-center z-50">
             <button id="tabHome" class="flex flex-col items-center text-pink-500 font-bold text-xs" onclick="switchTab('home')">🏠<span class="mt-0.5">홈</span></button>
             <button id="registerTabBtn" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400">➕<span class="mt-0.5">등록</span></button>
             <button id="tabBookmark" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400" onclick="switchTab('bookmark')">🔖<span class="mt-0.5">북마크</span></button>
@@ -331,7 +322,8 @@
                     
                     <div class="flex gap-2">
                         <input type="number" step="0.1" id="commPrice" placeholder="가격 (가치 단위)" class="w-1/2 p-3 rounded-xl border border-pink-300 focus:outline-none focus:border-pink-400" required>
-                        <select id="commSlotType" class="w-1/2 p-3 rounded-xl border border-pink-300 bg-white text-xs focus:outline-none">
+                        <!-- ✅ 수정2: onchange 추가 -->
+                        <select id="commSlotType" onchange="toggleSlotInputDisplay(this.value)" class="w-1/2 p-3 rounded-xl border border-pink-300 bg-white text-xs focus:outline-none">
                             <option value="always">상시 커미션</option>
                             <option value="limited">슬롯 제한제</option>
                         </select>
@@ -373,11 +365,11 @@
                         </div>
                     </div>
                     
-                    <input type="text" id="commItem" placeholder="💎 받는 아이템 (상세 기재)" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none" >
-                    <input type="text" id="commCredit" placeholder="📌 출처 표기 방식" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none" >
-                    <input type="text" id="commDeadline" placeholder="📅 작업 마감기한 (예: 최대 2주 / 5일 이내)" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none" >
+                    <input type="text" id="commItem" placeholder="💎 받는 아이템 (상세 기재)" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none">
+                    <input type="text" id="commCredit" placeholder="📌 출처 표기 방식" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none">
+                    <input type="text" id="commDeadline" placeholder="📅 작업 마감기한 (예: 최대 2주 / 5일 이내)" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none">
                     <input type="text" id="commContact" placeholder="💬 신청 연락망 (예: 오픈채팅 링크 등)" class="w-full p-3 rounded-xl border-2 border-pink-300 focus:outline-none" required>
-                    <textarea id="commDesc" placeholder="타입에 대한 세부 설명을 작성해주세요." rows="3" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none" ></textarea>
+                    <textarea id="commDesc" placeholder="타입에 대한 세부 설명을 작성해주세요." rows="3" class="w-full p-3 rounded-xl border border-pink-300 focus:outline-none"></textarea>
 
                     <div class="p-3 bg-green-50/60 rounded-xl border-2 border-dashed border-green-200 space-y-1">
                         <p class="text-xs font-bold text-green-700">✅ OK (가능한 것)</p>
@@ -444,18 +436,13 @@
                     <p id="detailCredit" class="text-gray-700 p-3 bg-white"></p>
                 </div>
 
-            <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2">
                     <div class="border border-green-200 rounded-xl overflow-hidden shadow-sm">
-                        <div class="y2k-nametag-noborder px-2.5 py-1 text-white font-bold text-[11px] border-b border-pink-300">
-                            ✅ OK
-                        </div>
+                        <div class="y2k-nametag-noborder px-2.5 py-1 text-white font-bold text-[11px] border-b border-pink-300">✅ OK</div>
                         <p id="detailOk" class="text-gray-700 p-2.5 bg-white min-h-[60px] whitespace-pre-wrap text-[11px]"></p>
                     </div>
-                    
                     <div class="border border-red-200 rounded-xl overflow-hidden shadow-sm">
-                        <div class="y2k-nametag-noborder px-2.5 py-1 text-white font-bold text-[11px] border-b border-pink-300">
-                            ❌ NG
-                        </div>
+                        <div class="y2k-nametag-noborder px-2.5 py-1 text-white font-bold text-[11px] border-b border-pink-300">❌ NG</div>
                         <p id="detailNg" class="text-gray-700 p-2.5 bg-white min-h-[60px] whitespace-pre-wrap text-[11px]"></p>
                     </div>
                 </div>
@@ -630,43 +617,6 @@
             }
         }
 
-        function updateDropdownButtonsUI() {
-            const categories = [
-                { label: '화풍', defaultName: 'SD/LD', icon: '🎨', tags: ['SD', 'LD'] },
-                { label: '틀 종류', defaultName: '고정틀/자유', icon: '🖼️', tags: ['고정틀', '반고정틀', '자유'] },
-                { label: '채색', defaultName: '채색', icon: '✨', tags: ['낙서', '선화', '단색', '풀채색'] },
-                { label: '구도', defaultName: '구도', icon: '👤', tags: ['두상', '흉상', '반신', '전신'] },
-                { label: '기타', defaultName: '기타', icon: '🎁', tags: ['캐디', '기타'] },
-            ];
-            categories.forEach(cat => {
-                const wrapper = document.getElementById(`dropdown-${cat.label}`);
-                if (!wrapper) return;
-                const btnTextEl = wrapper.querySelector('.btn-text');
-                if (!btnTextEl) return;
-                const selectedInCat = cat.tags.filter(t => window.currentActiveTags && window.currentActiveTags.includes(t));
-                if (selectedInCat.length > 0) {
-                    btnTextEl.parentElement.className = "y2k-nametag px-2.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 shadow-3xs";
-                } else {
-                    btnTextEl.parentElement.className = "y2k-nametag px-2.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1 shadow-3xs";
-                }
-            });
-        }
-
-        const originChangeSortMode = window.changeSortMode;
-        if (typeof originChangeSortMode === 'function') {
-            window.changeSortMode = function(mode) {
-                window.currentSortMode = mode;
-                document.querySelectorAll('.sort-btn').forEach(b => {
-                    b.className = "sort-btn bg-white text-gray-600 border border-pink-300 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap";
-                });
-                const activeBtn = document.getElementById(`sort-${mode}`);
-                if (activeBtn) {
-                    activeBtn.className = "sort-btn y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-xs";
-                }
-                if (typeof fetchCommissions === 'function') fetchCommissions();
-            };
-        }
-
         function handleSharedLink() {
             const params = new URLSearchParams(location.search);
             const commissionId = params.get('commission');
@@ -687,19 +637,6 @@
             if (typeof fetchCommissions === 'function') fetchCommissions();
 
             handleSharedLink();
-
-            const originToggleTagFilter = window.toggleTagFilter;
-            if (typeof originToggleTagFilter === 'function') {
-                window.toggleTagFilter = function(tag) {
-                    originToggleTagFilter(tag); updateDropdownButtonsUI();
-                };
-            }
-            const originChangeFilter = window.changeFilter;
-            if (typeof originChangeFilter === 'function') {
-                window.changeFilter = function(target, filterName) {
-                    originChangeFilter(target, filterName); updateDropdownButtonsUI();
-                };
-            }
 
             const regBtn = document.getElementById('registerTabBtn');
             if (regBtn) {
