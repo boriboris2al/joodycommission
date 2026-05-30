@@ -3,7 +3,7 @@ const getSupabaseClient = () => window.supabaseClient;
 
 window.currentActiveTags = [];
 window.currentSearch = "";
-window.currentSortMode = "random"; // 기본: 랜덤(새로고침마다 무작위)
+window.currentSortMode = "random";
 
 function renderContactInfo(contactText) {
     if (!contactText) return `<span class="text-gray-400">등록된 연락망이 없습니다.</span>`;
@@ -29,9 +29,9 @@ function renderTagDropdowns() {
         if (!wrapper) continue;
         const panel = wrapper.querySelector('.dropdown-panel');
         if (!panel) continue;
-        panel.innerHTML = tags.map(tag => {
-            return `<button onclick="toggleTagFilter('${tag}')" id="tagBtn-${tag}" class="bg-gray-50 text-gray-700 hover:bg-pink-50 hover:text-pink-600 rounded-lg text-center font-medium transition py-1 px-2.5 text-xs block w-full">#${tag}</button>`;
-        }).join('');
+        panel.innerHTML = tags.map(tag =>
+            `<button onclick="toggleTagFilter('${tag}')" id="tagBtn-${tag}" class="bg-gray-50 text-gray-700 hover:bg-pink-50 hover:text-pink-600 rounded-lg text-center font-medium transition py-1 px-2.5 text-xs block w-full">#${tag}</button>`
+        ).join('');
     }
 }
 
@@ -78,10 +78,8 @@ function changeFilter(btn, mode) {
     }
 }
 
-// ✅ [신규] 정렬 모드 변경
 function changeSortMode(mode) {
     window.currentSortMode = mode;
-    // 버튼 활성화 UI
     document.querySelectorAll('.sort-btn').forEach(b => {
         b.classList.remove('bg-pink-500', 'text-white', 'shadow-sm');
         b.classList.add('bg-white', 'text-gray-600', 'border', 'border-gray-200');
@@ -94,7 +92,6 @@ function changeSortMode(mode) {
     fetchCommissions();
 }
 
-// ✅ 배열 셔플 (Fisher-Yates)
 function shuffleArray(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -104,44 +101,28 @@ function shuffleArray(arr) {
     return a;
 }
 
-// 1. 피드 조회
+// =============================================
+// 1. 피드 조회 (정렬 버그 완전 수술 패치 버전)
+// =============================================
 async function fetchCommissions() {
     const listEl = document.getElementById('commissionList');
     if (!listEl) return;
     listEl.innerHTML = "<p class='text-xs text-gray-400 text-center py-10'>커미션 피드를 불러오는 중... 🎀</p>";
 
     try {
-        // 정렬 모드에 따라 기본 쿼리 결정
-        let query = getSupabaseClient()
+        const { data, error } = await getSupabaseClient()
             .from('commissions')
             .select(`*, profiles!inner ( username, role, contact_info, response_time )`)
-            .eq('is_private', false);
+            .eq('is_private', false)
+            .order('bumped_at', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false });
 
-        const sortMode = window.currentSortMode || 'random';
-
-        if (sortMode === 'latest') {
-            // 끌올(bumped_at)이 있으면 우선, 없으면 created_at 기준
-            query = query.order('bumped_at', { ascending: false, nullsFirst: false })
-                         .order('created_at', { ascending: false });
-        } else if (sortMode === 'reviews') {
-            // reviews 수 기준은 클라이언트 정렬로 처리
-            query = query.order('created_at', { ascending: false });
-        } else if (sortMode === 'bookmarks') {
-            query = query.order('created_at', { ascending: false });
-        } else if (sortMode === 'popular') {
-            query = query.order('created_at', { ascending: false });
-        } else {
-            // 기본: 최신순 가져와서 클라이언트에서 셔플
-            query = query.order('bumped_at', { ascending: false, nullsFirst: false })
-                         .order('created_at', { ascending: false });
-        }
-
-        const { data, error } = await query;
         if (error) throw error;
 
         let filteredData = data || [];
-        const searchKeyword = (window.currentSearch || "").trim().toLowerCase();
 
+        // 검색 필터
+        const searchKeyword = (window.currentSearch || "").trim().toLowerCase();
         if (searchKeyword !== "") {
             filteredData = filteredData.filter(item => {
                 const titleMatch = item.title && item.title.toLowerCase().includes(searchKeyword);
@@ -151,6 +132,7 @@ async function fetchCommissions() {
             });
         }
 
+        // 태그 필터
         if (window.currentActiveTags.length > 0) {
             filteredData = filteredData.filter(item => {
                 if (!item.tags || !Array.isArray(item.tags)) return false;
@@ -158,15 +140,47 @@ async function fetchCommissions() {
             });
         }
 
-        // 정렬 처리
+        const sortMode = window.currentSortMode || 'random';
+
+        // 🌟 집계 데이터 병렬 스캔 병합 로직
+        const ids = filteredData.map(i => i.id);
+        if (ids.length > 0) {
+            // 북마크 집계
+            const { data: bData } = await getSupabaseClient()
+                .from('bookmarks')
+                .select('commission_id')
+                .in('commission_id', ids);
+
+            // 후기 집계
+            const { data: rData } = await getSupabaseClient()
+                .from('reviews')
+                .select('commission_id')
+                .in('commission_id', ids);
+
+            const bookmarkMap = {};
+            const reviewMap = {};
+            (bData || []).forEach(b => { bookmarkMap[b.commission_id] = (bookmarkMap[b.commission_id] || 0) + 1; });
+            (rData || []).forEach(r => { reviewMap[r.commission_id] = (reviewMap[r.commission_id] || 0) + 1; });
+
+            filteredData = filteredData.map(item => ({
+                ...item,
+                bookmark_count: bookmarkMap[item.id] || 0,
+                review_count: reviewMap[item.id] || 0,
+            }));
+        }
+
+        // 🌟 [정렬 엔진 수술] 정렬 결과가 제대로 배열에 적용되도록 구조 교정 및 조건 매핑
         if (sortMode === 'random') {
             filteredData = shuffleArray(filteredData);
         } else if (sortMode === 'reviews') {
+            // 후기 개수가 많은 순 정렬
             filteredData.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
         } else if (sortMode === 'bookmarks') {
+            // 북마크 개수가 많은 순 정렬
             filteredData.sort((a, b) => (b.bookmark_count || 0) - (a.bookmark_count || 0));
         } else if (sortMode === 'popular') {
-            filteredData.sort((a, b) => ((b.review_count || 0) + (b.bookmark_count || 0)) - ((a.review_count || 0) + (a.bookmark_count || 0)));
+            // 🌟 요구사항: 인기순은 오직 클릭수(조회수: view_count)가 가장 높은 순으로 단독 마킹 정렬!
+            filteredData.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
         }
 
         if (filteredData.length === 0) {
@@ -176,21 +190,17 @@ async function fetchCommissions() {
 
         listEl.innerHTML = filteredData.map(item => {
             const artistName = item.profiles ? item.profiles.username : '알 수 없음';
-
             let firstImg = 'https://placehold.co/400x300/fbcfe8/fff?text=No+Image';
             if (item.image_url) {
                 firstImg = item.image_url.includes(',') ? item.image_url.split(',')[0] : item.image_url;
             }
-
             const slotText = item.slot_type === 'always' ? '상시 모집' : `슬롯 ${item.current_slots || 0}/${item.max_slots || 5}`;
             const statusBadge = item.is_closed
-                ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">마감</span>`
-                : `<span class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-2xs">모집중</span>`;
+                ? `<span class="bg-gray-400 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">마감</span>`
+                : `<span class="bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">모집중</span>`;
             const tagsHtml = (item.tags && item.tags.length > 0)
                 ? item.tags.map(t => `<span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 py-0.5 rounded-md">#${t}</span>`).join(' ')
                 : '';
-
-            // 끌올 뱃지
             const bumpedBadge = item.bumped_at
                 ? `<span class="bg-amber-100 text-amber-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full">⬆️ 끌올</span>`
                 : '';
@@ -203,7 +213,7 @@ async function fetchCommissions() {
                     </div>
                     <div class="p-3.5 flex flex-col gap-1.5">
                         <div class="flex justify-between items-center text-[11px]">
-                            <span class="text-pink-600 font-bold hover:underline flex items-center gap-1" onclick="event.stopPropagation(); openArtistProfile('${item.user_id}');">🎨 ${artistName}</span>
+                            <span class="text-pink-600 font-bold hover:underline" onclick="event.stopPropagation(); openArtistProfile('${item.user_id}');">🎨 ${artistName}</span>
                             <div class="flex items-center gap-1">${bumpedBadge} ${statusBadge} <span class="text-gray-400 font-medium">${slotText}</span></div>
                         </div>
                         <h3 class="text-sm font-bold text-gray-900 line-clamp-1">${item.title}</h3>
@@ -217,7 +227,7 @@ async function fetchCommissions() {
     }
 }
 
-// 2. 작가 프로필 상세 보기
+// 2. 작가 프로필
 async function openArtistProfile(userId) {
     if (!userId) return alert("유효하지 않은 작가 회원 정보입니다.");
     try {
@@ -232,19 +242,21 @@ async function openArtistProfile(userId) {
         document.getElementById('artistContactInfo').innerHTML = renderContactInfo(prof.contact_info);
         document.getElementById('artistResponseTime').innerText = prof.response_time || "지정된 응답 가능 시간이 없습니다.";
 
-        // ✅ [신규] 프로필 공유 버튼 연결
         const shareBtn = document.getElementById('artistShareBtn');
-        if (shareBtn) {
-            shareBtn.onclick = () => {
-                if (typeof shareProfileLink === 'function') shareProfileLink(userId, prof.username);
-            };
-        }
+        if (shareBtn) shareBtn.onclick = () => { if (typeof shareProfileLink === 'function') shareProfileLink(userId, prof.username); };
 
         const listContainer = document.getElementById('artistCommissionsList');
         listContainer.innerHTML = "<p class='text-[11px] text-gray-400 py-2'>등록된 타입을 조회 중입니다...</p>";
         openModal('artistProfileModal');
 
-        const { data: comms } = await getSupabaseClient().from('commissions').select('id, title, price, image_url, slot_type, is_closed').eq('user_id', userId).eq('is_private', false).order('bumped_at', { ascending: false, nullsFirst: false }).order('created_at', { ascending: false });
+        const { data: comms } = await getSupabaseClient()
+            .from('commissions')
+            .select('id, title, price, image_url, slot_type, is_closed')
+            .eq('user_id', userId)
+            .eq('is_private', false)
+            .order('bumped_at', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false });
+
         if (!comms || comms.length === 0) {
             listContainer.innerHTML = "<p class='text-[11px] text-gray-400 py-2 text-center'>현재 전시 중인 공개 타입이 없습니다.</p>";
         } else {
@@ -274,34 +286,36 @@ async function openArtistProfile(userId) {
 // 3. 커미션 상세보기
 async function openDetailModal(id) {
     try {
-        const { data: item, error } = await getSupabaseClient().from('commissions').select(`*, profiles ( username, contact_info )`).eq('id', id).maybeSingle();
+        const { data: item, error } = await getSupabaseClient()
+            .from('commissions')
+            .select(`*, profiles ( username, contact_info )`)
+            .eq('id', id)
+            .maybeSingle();
         if (error || !item) return alert("해당 커미션 글이 존재하지 않거나 삭제되었습니다.");
+
+        // 조회수 증가
+        getSupabaseClient()
+            .from('commissions')
+            .update({ view_count: (item.view_count || 0) + 1 })
+            .eq('id', id)
+            .then(() => {})
+            .catch(() => {});
 
         const isMine = window.currentUserId === item.user_id;
         document.getElementById('detailDeleteBtn').style.display = isMine ? 'block' : 'none';
         document.getElementById('detailEditBtn').style.display = isMine ? 'block' : 'none';
-
         document.getElementById('detailDeleteBtn').onclick = () => { closeModal('detailModal'); handleDeleteCommission(item.id, item.title); };
         document.getElementById('detailEditBtn').onclick = () => { closeModal('detailModal'); setupEditMode(item); };
 
-        // ✅ [신규] 커미션 공유 버튼
         const detailShareBtn = document.getElementById('detailShareBtn');
-        if (detailShareBtn) {
-            detailShareBtn.onclick = () => {
-                if (typeof shareCommissionLink === 'function') shareCommissionLink(item.id, item.title);
-            };
-        }
+        if (detailShareBtn) detailShareBtn.onclick = () => { if (typeof shareCommissionLink === 'function') shareCommissionLink(item.id, item.title); };
 
         const slider = document.getElementById('detailSliderContainer');
         const counter = document.getElementById('detailImgCounter');
         slider.innerHTML = "";
-
-        let imgs = [];
-        if (item.image_url) {
-            imgs = item.image_url.includes(',') ? item.image_url.split(',') : [item.image_url];
-        } else {
-            imgs = ['https://placehold.co/400x300/fbcfe8/fff?text=No+Image'];
-        }
+        let imgs = item.image_url
+            ? (item.image_url.includes(',') ? item.image_url.split(',') : [item.image_url])
+            : ['https://placehold.co/400x300/fbcfe8/fff?text=No+Image'];
 
         imgs.forEach(url => { slider.innerHTML += `<img src="${url.trim()}" class="w-full h-full object-cover flex-shrink-0 snap-center">`; });
 
@@ -319,14 +333,12 @@ async function openDetailModal(id) {
 
         const slotText = item.slot_type === 'always' ? '상시 커미션' : `슬롯 마감현황 (${item.current_slots || 0}/${item.max_slots || 5})`;
         document.getElementById('detailSlot').innerText = item.is_closed ? '🔒 슬롯 마감' : `🔓 ${slotText}`;
-
         document.getElementById('detailTitle').innerText = item.title;
         document.getElementById('detailItem').innerText = item.item_wanted || '상세내용 없음';
         document.getElementById('detailDeadline').innerText = item.deadline || '상세 협의 후 결정';
         document.getElementById('detailCredit').innerText = item.credit_rule || '출처 표기 불필요';
         document.getElementById('detailDesc').innerText = item.description || '';
 
-        // ✅ [신규] OK / NG 표시
         const okEl = document.getElementById('detailOk');
         const ngEl = document.getElementById('detailNg');
         if (okEl) okEl.innerText = item.ok_list || '특별한 제한 없음';
@@ -339,12 +351,22 @@ async function openDetailModal(id) {
             contactBtn.onclick = () => {
                 const cleanLink = contactTarget.trim();
                 if (/^(http|https):\/\/[^\s]+/.test(cleanLink)) { window.open(cleanLink, '_blank'); }
-                else { alert(`작가님 연락망 정보입니다. 복사해서 사용해주세요!\n\n📋 연락처: ${cleanLink}`); }
+                else { alert(`작가님 연락망 정보입니다.\n\n📋 연락처: ${cleanLink}`); }
             };
         } else { contactBtn.innerText = "등록된 연락 경로가 없습니다."; contactBtn.onclick = null; }
 
         await updateBookmarkButtonUI(item.id);
         document.getElementById('targetCommissionId').value = item.id;
+
+        // 후기 폼 초기화
+        window.editingReviewId = null;
+        const reviewContent = document.getElementById('reviewContent');
+        const reviewSubmitBtn = document.getElementById('reviewSubmitBtn');
+        const reviewCancelBtn = document.getElementById('reviewCancelEditBtn');
+        if (reviewContent) reviewContent.value = '';
+        if (reviewSubmitBtn) { reviewSubmitBtn.innerText = '등록'; reviewSubmitBtn.className = 'bg-gray-800 text-white px-4 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm'; }
+        if (reviewCancelBtn) reviewCancelBtn.classList.add('hidden');
+
         fetchReviews(item.id);
         openModal('detailModal');
     } catch (e) { alert("상세화면을 열지 못했습니다: " + e.message); }
@@ -364,7 +386,7 @@ async function updateBookmarkButtonUI(commissionId) {
             btn.className = "bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[11px] font-bold border border-amber-200 hover:bg-amber-100";
             btn.onclick = () => addBookmark(commissionId);
         }
-    } catch (e) { }
+    } catch (e) {}
 }
 async function addBookmark(commissionId) { await getSupabaseClient().from('bookmarks').insert([{ user_id: window.currentUserId, commission_id: commissionId }]); await updateBookmarkButtonUI(commissionId); }
 async function removeBookmark(bookmarkId, commissionId) { await getSupabaseClient().from('bookmarks').delete().eq('id', bookmarkId); await updateBookmarkButtonUI(commissionId); }
@@ -374,7 +396,10 @@ async function fetchBookmarks() {
     if (!bList) return;
     if (!window.currentUserId) { bList.innerHTML = "<p class='text-xs text-gray-400 text-center py-10'>로그인 후 보관함을 이용해주세요! 🔒</p>"; return; }
     try {
-        const { data, error } = await getSupabaseClient().from('bookmarks').select(`id, commissions ( id, title, price, image_url, slot_type, is_closed, user_id, profiles ( username ) )`).eq('user_id', window.currentUserId);
+        const { data, error } = await getSupabaseClient()
+            .from('bookmarks')
+            .select(`id, commissions ( id, title, price, image_url, slot_type, is_closed, user_id, profiles ( username ) )`)
+            .eq('user_id', window.currentUserId);
         if (error) throw error;
         if (!data || data.length === 0) { bList.innerHTML = "<p class='text-xs text-gray-400 text-center py-14'>아직 하트를 누른 커미션 타입이 없습니다. 🤍</p>"; return; }
         bList.innerHTML = data.map(b => {
@@ -382,7 +407,9 @@ async function fetchBookmarks() {
             const artist = c.profiles ? c.profiles.username : '알 수 없음';
             let img = 'https://placehold.co/100x100/fbcfe8/fff?text=No+Img';
             if (c.image_url) img = c.image_url.includes(',') ? c.image_url.split(',')[0] : c.image_url;
-            const badge = c.is_closed ? `<span class="bg-gray-300 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold">마감</span>` : `<span class="bg-green-100 text-green-600 text-[10px] px-1.5 py-0.5 rounded font-bold">모집중</span>`;
+            const badge = c.is_closed
+                ? `<span class="bg-gray-300 text-gray-600 text-[10px] px-1.5 py-0.5 rounded font-bold">마감</span>`
+                : `<span class="bg-green-100 text-green-600 text-[10px] px-1.5 py-0.5 rounded font-bold">모집중</span>`;
             return `
                 <div class="bg-white rounded-2xl p-3 flex gap-3 border border-gray-100 shadow-2xs cursor-pointer hover:border-pink-200" onclick="openDetailModal(${c.id})">
                     <img src="${img}" class="w-16 h-16 object-cover rounded-xl border border-gray-100 flex-shrink-0">
@@ -399,10 +426,8 @@ async function fetchBookmarks() {
 }
 
 // =============================================
-// ✅ [버그수정 + 신규] 후기 기능 전면 개선
+// ✅ 후기 기능 (writer_id 칼럼 완벽 통합 정밀 제어)
 // =============================================
-
-// ✅ 후기 수정 상태 관리
 window.editingReviewId = null;
 
 async function fetchReviews(commissionId) {
@@ -411,10 +436,10 @@ async function fetchReviews(commissionId) {
     container.innerHTML = "<p class='text-[10px] text-gray-400 text-center py-2'>후기를 불러오는 중...</p>";
 
     try {
-        // 🐛 버그 수정: profiles join 시 FK 관계가 없으면 에러 발생 → 별도 조회로 안전 처리
+        // 🌟 [칼럼 패치 완료] 수파베이스의 실제 명칭인 writer_id를 기준으로 로딩 연산 진행
         const { data: reviews, error } = await getSupabaseClient()
             .from('reviews')
-            .select('id, content, rating, created_at, user_id, is_anonymous, image_url')
+            .select('id, content, rating, created_at, writer_id, is_anonymous, image_url')
             .eq('commission_id', commissionId)
             .order('created_at', { ascending: false });
 
@@ -429,21 +454,21 @@ async function fetchReviews(commissionId) {
             return;
         }
 
-        // 작성자 닉네임 별도 조회 (profiles join 우회)
-        const userIds = [...new Set(reviews.filter(r => !r.is_anonymous && r.user_id).map(r => r.user_id))];
+        const writerIds = [...new Set(reviews.filter(r => !r.is_anonymous && r.writer_id).map(r => r.writer_id))];
         let usernameMap = {};
-        if (userIds.length > 0) {
+        if (writerIds.length > 0) {
             const { data: profiles } = await getSupabaseClient()
                 .from('profiles')
                 .select('id, username')
-                .in('id', userIds);
+                .in('id', writerIds);
             if (profiles) profiles.forEach(p => { usernameMap[p.id] = p.username; });
         }
 
         container.innerHTML = reviews.map(r => {
-            const author = r.is_anonymous ? '익명' : (usernameMap[r.user_id] || '알 수 없음');
+            const author = r.is_anonymous ? '익명' : (usernameMap[r.writer_id] || '알 수 없음');
             const stars = "⭐".repeat(Math.min(r.rating || 5, 5));
-            const isReviewMine = window.currentUserId === r.user_id;
+            // 🌟 writer_id 칼럼 매핑으로 내 후기 여부 동기화 정상화
+            const isReviewMine = window.currentUserId === r.writer_id;
 
             const reviewImg = r.image_url
                 ? `<img src="${r.image_url}" class="mt-1.5 w-full max-h-32 object-cover rounded-lg border border-gray-100 cursor-pointer" onclick="window.open('${r.image_url}','_blank')">`
@@ -451,7 +476,7 @@ async function fetchReviews(commissionId) {
 
             const actionBtns = isReviewMine
                 ? `<div class="flex gap-1.5 items-center">
-                    <button onclick="event.stopPropagation(); startEditReview(${r.id}, \`${r.content.replace(/`/g, '\\`')}\`, ${r.rating}, ${commissionId})" class="text-[9px] text-blue-400 hover:underline">수정</button>
+                    <button onclick="event.stopPropagation(); startEditReview(${r.id}, \`${r.content.replace(/`/g, '\\`').replace(/"/g, '&quot;')}\`, ${r.rating}, ${commissionId})" class="text-[9px] text-blue-400 hover:underline">수정</button>
                     <button onclick="event.stopPropagation(); handleDeleteReview(${r.id}, ${commissionId})" class="text-[9px] text-red-400 hover:underline">삭제</button>
                    </div>`
                 : '';
@@ -472,48 +497,40 @@ async function fetchReviews(commissionId) {
     }
 }
 
-// ✅ 후기 수정 모드 진입
 function startEditReview(reviewId, content, rating, commissionId) {
     window.editingReviewId = reviewId;
     const contentInput = document.getElementById('reviewContent');
     const ratingInput = document.getElementById('reviewRating');
     const submitBtn = document.getElementById('reviewSubmitBtn');
+    const cancelBtn = document.getElementById('reviewCancelEditBtn');
 
     if (contentInput) contentInput.value = content;
     if (ratingInput) ratingInput.value = rating;
     if (submitBtn) {
         submitBtn.innerText = "수정 완료";
-        submitBtn.classList.remove('bg-gray-800');
-        submitBtn.classList.add('bg-blue-500');
+        submitBtn.className = 'bg-blue-500 text-white px-4 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm';
     }
-
-    const cancelBtn = document.getElementById('reviewCancelEditBtn');
     if (cancelBtn) {
         cancelBtn.classList.remove('hidden');
         cancelBtn.onclick = () => cancelEditReview(commissionId);
     }
-
     document.getElementById('targetCommissionId').value = commissionId;
-    contentInput && contentInput.focus();
+    if (contentInput) contentInput.focus();
 }
 
-// ✅ 수정 취소
 function cancelEditReview(commissionId) {
     window.editingReviewId = null;
     const contentInput = document.getElementById('reviewContent');
     const submitBtn = document.getElementById('reviewSubmitBtn');
     const cancelBtn = document.getElementById('reviewCancelEditBtn');
-
     if (contentInput) contentInput.value = '';
     if (submitBtn) {
-        submitBtn.innerText = "등록";
-        submitBtn.classList.remove('bg-blue-500');
-        submitBtn.classList.add('bg-gray-800');
+        submitBtn.innerText = '등록';
+        submitBtn.className = 'bg-gray-800 text-white px-4 rounded-xl text-xs font-bold whitespace-nowrap shadow-sm';
     }
     if (cancelBtn) cancelBtn.classList.add('hidden');
 }
 
-// ✅ [버그수정] 후기 등록 (is_anonymous, image_url 컬럼 추가 포함)
 async function handleCreateReview(e) {
     e.preventDefault();
     if (!window.currentUserId) return alert("로그인 세션이 필요합니다!");
@@ -532,8 +549,6 @@ async function handleCreateReview(e) {
 
     try {
         let imageUrl = null;
-
-        // 이미지 업로드 처리
         if (imageFile) {
             const ext = imageFile.name.split('.').pop();
             const path = `reviews/${window.currentUserId}/${Date.now()}.${ext}`;
@@ -543,23 +558,22 @@ async function handleCreateReview(e) {
             imageUrl = publicUrl;
         }
 
-        // ✅ 수정 모드
         if (window.editingReviewId) {
             const updateData = { content, rating };
             if (imageUrl) updateData.image_url = imageUrl;
+            // 🌟 수정한 후기 업데이트 단에서도 writer_id 매핑 교정
             const { error } = await getSupabaseClient()
                 .from('reviews')
                 .update(updateData)
                 .eq('id', window.editingReviewId)
-                .eq('user_id', window.currentUserId);
+                .eq('writer_id', window.currentUserId);
             if (error) throw error;
             cancelEditReview(commId);
             alert("후기가 수정되었습니다! ✨");
         } else {
-            // ✅ 신규 등록
             const payload = {
-                commission_id: commId,
-                user_id: window.currentUserId,
+                commission_id: parseInt(commId),
+                writer_id: window.currentUserId,   // 🌟 writer_id 칼럼 매핑으로 안전하게 안착
                 content,
                 rating,
                 is_anonymous: isAnonymous
@@ -569,9 +583,11 @@ async function handleCreateReview(e) {
             const { error } = await getSupabaseClient().from('reviews').insert([payload]);
             if (error) throw error;
 
-            document.getElementById('reviewContent').value = "";
-            if (document.getElementById('reviewImage')) document.getElementById('reviewImage').value = "";
+            if (document.getElementById('reviewContent')) document.getElementById('reviewContent').value = '';
+            if (document.getElementById('reviewImage')) document.getElementById('reviewImage').value = '';
             if (document.getElementById('reviewAnonymous')) document.getElementById('reviewAnonymous').checked = false;
+            const nameEl = document.getElementById('reviewImageName');
+            if (nameEl) nameEl.innerText = '';
         }
 
         fetchReviews(commId);
@@ -589,17 +605,23 @@ async function handleCreateReview(e) {
 async function handleDeleteReview(reviewId, commissionId) {
     if (!confirm("작성하신 후기를 정말 삭제하시겠습니까?")) return;
     try {
-        const { error } = await getSupabaseClient().from('reviews').delete().eq('id', reviewId).eq('user_id', window.currentUserId);
+        // 🌟 삭제 트랩 파트에서도 writer_id 명칭 완벽 동기화 완료
+        const { error } = await getSupabaseClient()
+            .from('reviews')
+            .delete()
+            .eq('id', reviewId)
+            .eq('writer_id', window.currentUserId);
         if (error) throw error;
         fetchReviews(commissionId);
     } catch (e) { alert("후기 삭제 실패: " + e.message); }
 }
 
+// =============================================
+// 커미션 등록/수정/삭제
+// =============================================
 function openRegisterModal() {
     if (!window.currentUserId) return alert("로그인 후 커미션 등록이 가능합니다!");
-    if (window.currentUserRole === 'applicant') {
-        return alert("⚠️ 신청자 전용 계정은 커미션 글을 등록할 수 없습니다.\n글을 쓰시려면 정보 수정에서 권한(타입)을 변경해주세요.");
-    }
+    if (window.currentUserRole === 'applicant') return alert("⚠️ 신청자 전용 계정은 커미션 글을 등록할 수 없습니다.");
     openModal('regModal');
 }
 
@@ -616,7 +638,6 @@ async function handleCreateCommission(e) {
     const deadline = document.getElementById('commDeadline').value.trim();
     const contact_info = document.getElementById('commContact').value.trim();
     const description = document.getElementById('commDesc').value.trim();
-    // ✅ [신규] OK/NG
     const ok_list = document.getElementById('commOkList')?.value.trim() || '';
     const ng_list = document.getElementById('commNgList')?.value.trim() || '';
     const fileInput = document.getElementById('commImage');
@@ -632,7 +653,9 @@ async function handleCreateCommission(e) {
         let finalImages = [];
         if (fileInput.files && fileInput.files.length > 0) {
             for (let i = 0; i < fileInput.files.length; i++) {
-                const file = fileInput.files[i]; const ext = file.name.split('.').pop(); const path = `${window.currentUserId}/${Date.now()}_${i}.${ext}`;
+                const file = fileInput.files[i];
+                const ext = file.name.split('.').pop();
+                const path = `${window.currentUserId}/${Date.now()}_${i}.${ext}`;
                 const { error: upErr } = await getSupabaseClient().storage.from('commission-samples').upload(path, file);
                 if (upErr) throw upErr;
                 const { data: { publicUrl } } = getSupabaseClient().storage.from('commission-samples').getPublicUrl(path);
@@ -640,13 +663,7 @@ async function handleCreateCommission(e) {
             }
         }
 
-        const payload = {
-            title, price, slot_type, current_slots, max_slots,
-            item_wanted, credit_rule, deadline, contact_info, description,
-            tags: checkedTags,
-            ok_list,
-            ng_list
-        };
+        const payload = { title, price, slot_type, current_slots, max_slots, item_wanted, credit_rule, deadline, contact_info, description, tags: checkedTags, ok_list, ng_list };
 
         if (commId) {
             if (finalImages.length > 0) payload.image_url = finalImages.join(',');
@@ -660,7 +677,9 @@ async function handleCreateCommission(e) {
             if (error) throw error;
             alert("새로운 커미션 타입이 등록되었습니다! 🎀");
         }
-        closeModal('regModal'); document.getElementById('regForm').reset(); fetchCommissions();
+        closeModal('regModal');
+        document.getElementById('regForm').reset();
+        fetchCommissions();
     } catch (err) { alert("등록/수정 오류: " + err.message); }
     finally { submitBtn.innerText = commId ? "수정 완료" : "등록 완료"; submitBtn.disabled = false; }
 }
@@ -682,7 +701,7 @@ function setupEditMode(item) {
     if (document.getElementById('commNgList')) document.getElementById('commNgList').value = item.ng_list || '';
 
     document.querySelectorAll('#regForm input[type="checkbox"]').forEach(cb => {
-        const tName = cb.getAttribute('data-name'); cb.checked = (item.tags && item.tags.includes(tName));
+        cb.checked = (item.tags && item.tags.includes(cb.getAttribute('data-name')));
     });
 
     document.getElementById('regModalTitle').innerText = "내 커미션 타입 수정";
@@ -692,7 +711,7 @@ function setupEditMode(item) {
 }
 
 async function handleDeleteCommission(id, title) {
-    if (!confirm(`[ ${title} ] 타입을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    if (!confirm(`[ ${title} ] 타입을 정말 삭제하시겠습니까?`)) return;
     try {
         const { error } = await getSupabaseClient().from('commissions').delete().eq('id', id).eq('user_id', window.currentUserId);
         if (error) throw error;
