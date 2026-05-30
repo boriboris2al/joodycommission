@@ -5,14 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Joody Commission ⭐️ PurinLand Style</title>
     
-    <!-- 🔤 KoPubWorld 및 형님이 지정해주신 RoundedFixedsys 전용 웹폰트 정의 -->
+    <!-- 🔤 KoPubWorld 로드 -->
     <link rel="stylesheet" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KoPubWorldDotum.css">
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
-        /* [형님 픽] RoundedFixedsys 고전 도트 폰트 주입 */
+        /* 폰트 정의 추가 및 변경 */
+        @font-face {
+            font-family: 'Cafe24ProSlim';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/Cafe24PROSlim-Light.woff2') format('woff2');
+            font-weight: 300;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Cafe24ProSlim';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/Cafe24PROSlim-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-display: swap;
+        }
+
+        @font-face {
+            font-family: 'Cafe24ProSlim';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2511-1@1.0/Cafe24PROSlim-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-display: swap;
+        }
+
+        /* [형님 픽] RoundedFixedsys 고전 도트 폰트 정의 */
         @font-face {
             font-family: 'RoundedFixedsys';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
@@ -20,21 +42,25 @@
             font-display: swap;
         }
 
-        /* 메인 화면 전체에 RoundedFixedsys 폰트 강제 매핑 */
+        /* 기본적으로 메인 레이아웃 및 제어부에는 고전 도트 스타일 매핑 */
         * {
             font-family: 'RoundedFixedsys', 'KoPubWorldDotum', sans-serif !important;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             box-sizing: border-box;
         }
+
+        /* 🌟 [요구사항 1]: 본문 내부 설명용 글씨들은 무조건 가독성이 탁월한 KoPubWorld 폰트로 강제 복구 치료 */
+        .kopub-readable, .kopub-readable *, #detailItem, #detailDeadline, #detailCredit, #detailOk, #detailNg, #detailDesc, #reviewList p, #reviewList span, input[type="text"], textarea {
+            font-family: 'KoPubWorldDotum', sans-serif !important;
+            font-weight: 500 !important;
+        }
         
-        /* 깅엄 체크무늬 Y2K 바탕 패턴 배경 */
+        /* 전체 배경: 흰색 바탕에 분홍색 도트(점) 패턴 (넓은 간격) */
         body {
-            background-color: #fce7f3;
-            background-image: 
-                linear-gradient(90deg, rgba(251, 207, 232, 0.4) 50%, transparent 50%),
-                linear-gradient(rgba(251, 207, 232, 0.4) 50%, transparent 50%);
-            background-size: 20px 20px;
+            background-color: #ffffff;
+            background-image: radial-gradient(#fbcfe8 2px, transparent 2px);
+            background-size: 32px 32px;
             min-height: 100vh;
         }
 
@@ -50,6 +76,13 @@
             position: relative;
         }
         
+        /* 🌟 타이틀 헤더 구역 배경: 점 크기를 줄이고(4px -> 2.5px) 간격을 더 촘촘하게(28px -> 18px) 수정 */
+        .y2k-header-grid {
+            background-color: #d8fbf9;
+            background-image: radial-gradient(rgba(255, 140, 200, 0.7) 2.5px, transparent 2.5px);
+            background-size: 18px 18px;
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -98,8 +131,10 @@
             opacity: 0.95;
         }
 
-        /* 🌟 [형님 픽]: 지정해주신 #c3fa7f 색상으로 외곽선 컬러 전면 매핑 수술 */
+        /* 메인 상단 타이틀 로고용 스티커 필터 - 요청 서체 적용 및 볼드 처리 */
         .y2k-main-title {
+            font-family: 'Cafe24ProSlim', sans-serif !important;
+            font-weight: 700 !important;
             color: #ffffff !important;
             text-shadow: 
                 -2px -2px 0 #c3fa7f,  
@@ -114,6 +149,28 @@
             letter-spacing: -0.5px;
         }
 
+        /* 🌟 [요구사항 2]: 두 번째 사진 스타일의 얇은 대시선 테두리 + 은은한 그라데이션 4색 배지 명세 */
+        .btn-y2k-pink {
+            background: linear-gradient(to bottom, #fff5f5 0%, #ffe3e3 100%);
+            border: 2px dashed #fca5a5;
+            color: #dc2626 !important;
+        }
+        .btn-y2k-blue {
+            background: linear-gradient(to bottom, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px dashed #bae6fd;
+            color: #2563eb !important;
+        }
+        .btn-y2k-green {
+            background: linear-gradient(to bottom, #f0fdf4 0%, #dcfce7 100%);
+            border: 2px dashed #bbf7d0;
+            color: #16a34a !important;
+        }
+        .btn-y2k-purple {
+            background: linear-gradient(to bottom, #faf5ff 0%, #f3e8ff 100%);
+            border: 2px dashed #e9d5ff;
+            color: #9333ea !important;
+        }
+
         .sort-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         .sort-bar::-webkit-scrollbar { display: none; }
     </style>
@@ -122,7 +179,7 @@
 
     <div class="phone-container flex flex-col">
         <!-- 헤더 바 -->
-        <header class="bg-pink-100 p-4 sticky top-0 z-50 flex justify-between items-center border-b-4 border-double border-pink-300">
+        <header class="y2k-header-grid p-4 sticky top-0 z-50 flex justify-between items-center border-b-4 border-double border-pink-300">
             <h1 class="text-xl font-bold y2k-main-title cursor-pointer transition-transform duration-100 active:scale-95" onclick="location.reload()">Joody Commission</h1>
             <button id="loginBtn" class="y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold transition-all">로그인/가입</button>
         </header>
@@ -189,10 +246,10 @@
             </main>
         </div>
 
-        <!-- 🔖 🌟 [이름 변경]: 보관함에서 '북마크'로 전면 교체 완료 -->
+        <!-- 🔖 북마크 화면 컨텐츠 섹션 -->
         <div id="sectionBookmark" class="flex-1 flex flex-col hidden">
             <main class="flex-1 p-4 pb-20 overflow-x-hidden">
-                <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 내가 찜한 북마크</h2>
+                <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 북마크</h2>
                 <div id="bookmarkList" class="flex flex-col gap-5"></div>
             </main>
         </div>
@@ -201,7 +258,6 @@
         <nav class="absolute bottom-0 left-0 right-0 bg-white border-t-4 border-double border-pink-200 p-2 flex justify-around items-center z-50">
             <button id="tabHome" class="flex flex-col items-center text-pink-500 font-bold text-xs" onclick="switchTab('home')">🏠<span class="mt-0.5">홈</span></button>
             <button id="registerTabBtn" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400">➕<span class="mt-0.5">등록</span></button>
-            <!-- 🌟 하단 탭 바 텍스트도 '북마크'로 연동 처리 -->
             <button id="tabBookmark" class="flex flex-col items-center text-gray-400 text-xs hover:text-pink-400" onclick="switchTab('bookmark')">🔖<span class="mt-0.5">북마크</span></button>
         </nav>
     </div>
@@ -216,7 +272,7 @@
                     <input type="text" id="authUsername" placeholder="주디 인게임 닉네임" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
                     <div class="relative">
                         <input type="password" id="authPassword" placeholder="비밀번호" class="w-full p-3 pr-12 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
-                        <button type="button" onclick="togglePasswordVisibility('authPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg select-none">👁️</button>
+                        <button type="button" onclick="togglePasswordVisibility('authPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg select-none">🐵</button>
                     </div>
                     <div id="authExtraContainer" class="hidden space-y-3">
                         <input type="text" id="authContact" placeholder="기본 연락처 (예: 오픈채팅 링크 등)" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400">
@@ -316,19 +372,20 @@
     <!-- ===== 상세보기 모달 ===== -->
     <div id="detailModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative border-4 border-double border-pink-300 shadow-2xl">
+            <!-- 🌟 [요구사항 2]: 두 번째 사진 디자인 반영 (분홍, 파랑, 초록, 보라 순서대로 얇은 그라데이션 배지 셋업) -->
             <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20 flex-wrap gap-1">
                 <div class="flex gap-1.5">
-                    <button id="detailDeleteBtn" class="bg-red-50 text-red-600 px-2.5 py-1 rounded-full text-[11px] font-bold border-2 border-dashed border-red-200 hover:bg-red-100 hidden">🔴 삭제</button>
-                    <button id="detailEditBtn" class="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full text-[11px] font-bold border-2 border-dashed border-blue-200 hover:bg-blue-100 hidden">✏️ 수정</button>
+                    <button id="detailDeleteBtn" class="btn-y2k-pink px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">🔴 삭제</button>
+                    <button id="detailEditBtn" class="btn-y2k-blue px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">✏️ 수정</button>
                 </div>
                 <div class="flex gap-1.5 items-center">
-                    <button id="detailBookmarkBtn" class="bg-amber-50 text-amber-600 px-2.5 py-1 rounded-full text-[11px] font-bold border-2 border-dashed border-amber-200 hover:bg-amber-100">🤍 북마크</button>
-                    <button id="detailShareBtn" class="bg-purple-50 text-purple-600 px-2.5 py-1 rounded-full text-[11px] font-bold border-2 border-dashed border-purple-200 hover:bg-purple-100">🔗 공유</button>
+                    <button id="detailBookmarkBtn" class="btn-y2k-green px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🤍 북마크</button>
+                    <button id="detailShareBtn" class="btn-y2k-purple px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🔗 공유</button>
                     <button onclick="closeModal('detailModal')" class="bg-white/90 text-gray-500 w-8 h-8 rounded-full flex items-center justify-center shadow-md font-bold text-lg border border-gray-200">✕</button>
                 </div>
             </div>
             
-            <div class="relative mt-8 -mx-1 rounded-2xl overflow-hidden border-2 border-pink-100">
+            <div class="relative mt-10 -mx-1 rounded-2xl overflow-hidden border-2 border-pink-100">
                 <div id="detailSliderContainer" class="h-56 bg-gray-100 flex overflow-x-auto snap-x snap-mandatory scrollbar-none"></div>
                 <span id="detailPrice" class="absolute bottom-3 right-3 y2k-nametag text-white text-xs font-bold px-3 py-1.5 rounded-full z-20"></span>
                 <span id="detailImgCounter" class="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full z-20 hidden"></span>
@@ -342,9 +399,10 @@
                 <h2 id="detailTitle" class="text-base font-bold text-gray-900"></h2>
             </div>
 
+            <!-- 🌟 본문 출력 카드는 가독성 최적화 클래스 주입으로 도트 서체를 무력화하고 코펍 폰트로 렌더링 -->
             <div class="space-y-3.5 text-xs">
                 <div class="border border-pink-200 rounded-xl overflow-hidden shadow-2xs">
-                    <div class="y2k-nametag px-3 py-1 text-white font-bold flex items-center gap-1">✨ <span class="btn-text">아이템 정산지표</span></div>
+                    <div class="y2k-nametag px-3 py-1 text-white font-bold flex items-center gap-1">✨ <span class="btn-text">받는 아이템</span></div>
                     <p id="detailItem" class="text-gray-700 font-medium p-3 bg-white"></p>
                 </div>
                 
@@ -377,9 +435,9 @@
 
             <button id="detailContactBtn" class="w-full y2k-nametag text-white p-3 rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-opacity"></button>
             
-            <!-- ===== 후기 섹션 ===== -->
+            <!-- ===== 커미션 후기 섹션 ===== -->
             <div class="border-t-2 border-dashed border-pink-100 pt-4 space-y-3">
-                <h3 class="text-xs font-bold text-pink-600 flex items-center gap-1">💬 일촌들의 한줄 후기</h3>
+                <h3 class="text-xs font-bold text-pink-600 flex items-center gap-1">💬 신청자 한줄 후기</h3>
                 <div id="reviewList" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
                 
                 <form id="reviewForm" class="pt-2 border-t-2 border-dashed border-pink-100 flex flex-col gap-2">
@@ -393,7 +451,7 @@
                     </select>
 
                     <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
-                        <input type="checkbox" id="reviewAnonymous" class="rounded border-pink-300 text-pink-500 focus:ring-pink-400"> 비밀글로 속삭이기 (익명)
+                        <input type="checkbox" id="reviewAnonymous" class="rounded border-pink-300 text-pink-500 focus:ring-pink-400"> 익명으로 후기 등록
                     </label>
 
                     <div class="flex gap-1.5 w-full">
@@ -403,7 +461,7 @@
 
                     <div class="flex items-center gap-2">
                         <label class="text-[10px] text-pink-400 flex items-center gap-1 cursor-pointer hover:text-pink-600 underline">
-                            📷 사진 인화 첨부 (선택)
+                            📷 사진 첨부 (선택)
                             <input type="file" id="reviewImage" accept="image/*" class="hidden">
                         </label>
                         <span id="reviewImageName" class="text-[10px] text-pink-500 truncate max-w-[140px]"></span>
@@ -437,7 +495,7 @@
                 </div>
             </div>
             <div class="space-y-2 pt-2">
-                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 미니 룸에 전시된 타입들</h3>
+                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 커미션 타입</h3>
                 <div id="artistCommissionsList" class="flex flex-col gap-4"></div>
             </div>
         </div>
@@ -450,7 +508,7 @@
             <h2 class="text-lg font-bold text-pink-600 mb-4 border-b-2 border-dashed border-pink-200 pb-1">내 계정 관리 ☆</h2>
             <div class="space-y-2">
                 <button id="menuMyTypes" onclick="openMyTypes()" class="w-full text-left bg-pink-50 hover:bg-pink-100 text-pink-700 font-semibold p-3.5 rounded-xl text-sm border-2 border-dashed border-pink-200 transition">🖼️ 내 커미션 관리 대시보드</button>
-                <button onclick="closeModal('profileMenuModal'); if(typeof openArtistProfile === 'function') openArtistProfile(window.currentUserId);" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">👤 내 미니 홈피 미니룸 보기</button>
+                <button onclick="closeModal('profileMenuModal'); if(typeof openArtistProfile === 'function') openArtistProfile(window.currentUserId);" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">👤 내 프로필 카드 스크랩</button>
                 <button onclick="openEditProfile()" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">✏️ 내 개인정보 수정</button>
                 <button onclick="closeModal('profileMenuModal'); if(confirm('로그아웃 하시겠습니까?')) handleLogout();" class="w-full text-left bg-gray-50 hover:bg-gray-100 text-gray-400 font-semibold p-3.5 rounded-xl text-sm border border-gray-200 transition">🚪 시스템 로그아웃</button>
                 <button onclick="closeModal('profileMenuModal'); if(typeof handleWithdrawal === 'function') handleWithdrawal();" class="w-full text-left bg-red-50 hover:bg-red-100 text-red-500 font-bold p-3.5 rounded-xl text-sm border border-red-200 transition">🚨 데이터 영구 계정탈퇴</button>
@@ -490,7 +548,7 @@
                         <label class="text-xs font-semibold text-pink-500 block mb-1">새 비밀번호 (변경 시에만 입력)</label>
                         <div class="relative">
                             <input type="password" id="editPassword" placeholder="변경하지 않으면 비워두세요" class="w-full p-3 pr-12 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none">
-                            <button type="button" onclick="togglePasswordVisibility('editPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg select-none">👁️</button>
+                            <button type="button" onclick="togglePasswordVisibility('editPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg select-none">🐵</button>
                         </div>
                     </div>
                     <button type="submit" class="w-full y2k-nametag text-white p-3 rounded-xl font-bold mt-2">저장하기</button>
