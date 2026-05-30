@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Joody Commission ⭐️ PurinLand Style</title>
+    <title>Joody Commission</title>
     
     <link class="kopub-readable" rel="stylesheet" href="https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2212@1.0/KoPubWorldDotum.css">
     
@@ -121,13 +121,13 @@
         #dropdown-기타 .floating-dropdown-panel { left: auto; right: 0; }
         .floating-dropdown-panel.hidden { display: none !important; }
         
-        /* 버튼 및 네임태그 요소 입체 그라데이션 효과 기본 */
+        /* 오리지널 핑크 입체 그라데이션 테마 (y2k 오리지널 서식) */
         .y2k-nametag {
-            background: linear-gradient(to bottom, #fbcfe8 0%, #f472b6 100%);
-            border: 1px solid #db2777;
+            background: linear-gradient(to bottom, #fbcfe8 0%, #f472b6 100%) !important;
+            border: 1px solid #db2777 !important;
             text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
-            color: #ffffff;
+            color: #ffffff !important;
         }
         .y2k-nametag:hover {
             opacity: 0.95;
@@ -151,7 +151,7 @@
             letter-spacing: -0.5px;
         }
 
-        /* 제어 버튼용 입체 그라데이션 가공 명세 정의 (외곽선 1px 고정형) */
+        /* 상세 모달 제어용 버튼 입체 그라데이션 컬러 라인업 개편 */
         .btn-y2k-pink {
             background: linear-gradient(to bottom, #fecaca 0%, #f87171 100%) !important;
             border: 1px solid #dc2626 !important;
@@ -166,26 +166,37 @@
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
             color: #ffffff !important;
         }
-        .btn-y2k-green {
-            background: linear-gradient(to bottom, #fef3c7 0%, #fbbf24 100%) !important;
-            border: 1px solid #d97706 !important;
+        /* 요청하신 더 밝고 선명한 옐로우 입체 그라데이션 커스텀 지정 */
+        .btn-y2k-yellow {
+            background: linear-gradient(to bottom, #fffbeb 0%, #facc15 100%) !important;
+            border: 1px solid #eab308 !important;
             text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
             color: #ffffff !important;
         }
-        .btn-y2k-purple {
+        .btn-y2k-green {
             background: linear-gradient(to bottom, #bbf7d0 0%, #4ade80 100%) !important;
             border: 1px solid #16a34a !important;
             text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
             color: #ffffff !important;
         }
-        .btn-y2k-bump {
-            background: linear-gradient(to bottom, #fef08a 0%, #eab308 100%) !important;
-            border: 1px solid #ca8a04 !important;
+        /* 요청하신 끌어올리기용 보라색 입체 그라데이션 커스텀 지정 */
+        .btn-y2k-purple {
+            background: linear-gradient(to bottom, #e9d5ff 0%, #a855f7 100%) !important;
+            border: 1px solid #7e22ce !important;
             text-shadow: 1px 1px 0px rgba(0,0,0,0.15);
             box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
             color: #ffffff !important;
+        }
+
+        /* 후기 내부 첨부 이미지 비율 유지 및 클릭 비활성화 */
+        .review-attached-img {
+            object-fit: contain;
+            max-height: 240px;
+            width: 100%;
+            pointer-events: none;
+            cursor: default;
         }
 
         .sort-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
@@ -260,7 +271,7 @@
 
         <div id="sectionBookmark" class="flex-1 flex flex-col hidden">
             <main class="flex-1 p-4 pb-20 overflow-x-hidden">
-                <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 북마크</h2>
+                <h2 class="text-base font-bold text-gray-900 mb-4 flex items-center gap-1">🔖 내가 찜한 북마크</h2>
                 <div id="bookmarkList" class="flex flex-col gap-5"></div>
             </main>
         </div>
@@ -281,7 +292,7 @@
                     <input type="text" id="authUsername" placeholder="주디 인게임 닉네임" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
                     <div class="relative">
                         <input type="password" id="authPassword" placeholder="비밀번호" class="w-full p-3 pr-12 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
-                        <button type="button" onclick="togglePasswordVisibility('authPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg select-none">🐵</button>
+                        <button type="button" onclick="togglePasswordVisibility('authPassword', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg select-none">👁️</button>
                     </div>
                     <div id="authExtraContainer" class="hidden space-y-3">
                         <input type="text" id="authContact" placeholder="기본 연락처 (예: 오픈채팅 링크 등)" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400">
@@ -305,10 +316,10 @@
             <form id="regForm">
                 <input type="hidden" id="editCommissionId">
                 <div class="space-y-3 text-sm">
-                    <input type="text" id="commTitle" placeholder="타입 이름 (예: 말랑 뽀작 두상)" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none" required>
+                    <input type="text" id="commTitle" placeholder="타입 이름 (예: 말랑 뽀작 두상)" class="w-full p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
                     
                     <div class="flex gap-2">
-                        <input type="number" step="0.1" id="commPrice" placeholder="가격 (가치 단위)" class="w-1/2 p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none" required>
+                        <input type="number" step="0.1" id="commPrice" placeholder="가격 (가치 단위)" class="w-1/2 p-3 rounded-xl border-2 border-dashed border-pink-100 focus:outline-none focus:border-pink-400" required>
                         <select id="commSlotType" class="w-1/2 p-3 rounded-xl border-2 border-dashed border-pink-100 bg-white text-xs focus:outline-none">
                             <option value="always">상시 커미션</option>
                             <option value="limited">슬롯 제한제</option>
@@ -380,14 +391,14 @@
     <div id="detailModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 max-h-[85vh] overflow-y-auto overflow-x-hidden relative border-4 border-double border-pink-300 shadow-2xl">
             <div class="absolute top-4 left-4 right-4 flex justify-between items-center z-20 flex-wrap gap-1">
-                <div class="flex gap-1.5">
-                    <button id="detailDeleteBtn" class="btn-y2k-pink px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">🔴 삭제</button>
-                    <button id="detailEditBtn" class="btn-y2k-blue px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">✏️ 수정</button>
-                    <button id="detailBumpBtn" class="btn-y2k-bump px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all hidden">⬆️ 끌올</button>
+                <div class="flex gap-1">
+                    <button id="detailDeleteBtn" class="btn-y2k-pink px-2 py-1 rounded-full text-[10px] font-bold shadow-2xs transition-all hidden">★ 삭제</button>
+                    <button id="detailEditBtn" class="btn-y2k-blue px-2 py-1 rounded-full text-[10px] font-bold shadow-2xs transition-all hidden">★ 수정</button>
+                    <button id="detailBumpBtn" class="btn-y2k-purple px-2 py-1 rounded-full text-[10px] font-bold shadow-2xs transition-all hidden">★ 끌올</button>
                 </div>
-                <div class="flex gap-1.5 items-center">
-                    <button id="detailBookmarkBtn" class="btn-y2k-green px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🤍 북마크 찜</button>
-                    <button id="detailShareBtn" class="btn-y2k-purple px-3 py-1 rounded-full text-[11px] font-bold shadow-2xs transition-all">🔗 공유</button>
+                <div class="flex gap-1 items-center">
+                    <button id="detailBookmarkBtn" class="btn-y2k-yellow px-2 py-1 rounded-full text-[10px] font-bold shadow-2xs transition-all">★ 북마크</button>
+                    <button id="detailShareBtn" class="btn-y2k-green px-2 py-1 rounded-full text-[10px] font-bold shadow-2xs transition-all">★ 공유</button>
                     <button onclick="closeModal('detailModal')" class="bg-white/90 text-gray-500 w-8 h-8 rounded-full flex items-center justify-center shadow-md font-bold text-lg border border-gray-200">✕</button>
                 </div>
             </div>
@@ -442,7 +453,7 @@
             <button id="detailContactBtn" class="w-full y2k-nametag text-white p-3 rounded-xl font-bold text-sm shadow-md hover:opacity-90 transition-opacity"></button>
             
             <div class="border-t-2 border-dashed border-pink-100 pt-4 space-y-3">
-                <h3 class="text-xs font-bold text-pink-600 flex items-center gap-1">💬 신청자 한줄 후기</h3>
+                <h3 class="text-xs font-bold text-pink-600 flex items-center gap-1">💬 일촌들의 한줄 후기</h3>
                 <div id="reviewList" class="space-y-2 max-h-52 overflow-y-auto pr-1"></div>
                 
                 <form id="reviewForm" class="pt-2 border-t-2 border-dashed border-pink-100 flex flex-col gap-2">
@@ -456,7 +467,7 @@
                     </select>
 
                     <label class="flex items-center gap-2 text-xs text-gray-400 cursor-pointer select-none">
-                        <input type="checkbox" id="reviewAnonymous" class="rounded border-pink-300 text-pink-500 focus:ring-pink-400"> 익명으로 후기 등록
+                        <input type="checkbox" id="reviewAnonymous" class="rounded border-pink-300 text-pink-500 focus:ring-pink-400"> 비밀글로 속삭이기 (익명)
                     </label>
 
                     <div class="flex gap-1.5 w-full">
@@ -466,7 +477,7 @@
 
                     <div class="flex items-center gap-2">
                         <label class="text-[10px] text-pink-400 flex items-center gap-1 cursor-pointer hover:text-pink-600 underline">
-                            📷 사진 첨부 (선택)
+                            📷 사진 인화 첨부 (선택)
                             <input type="file" id="reviewImage" accept="image/*" class="hidden">
                         </label>
                         <span id="reviewImageName" class="text-[10px] text-pink-500 truncate max-w-[140px]"></span>
@@ -482,10 +493,10 @@
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 max-h-[85vh] overflow-y-auto overflow-x-hidden relative border-4 border-double border-pink-300 shadow-xl space-y-4">
             <button onclick="closeModal('artistProfileModal')" class="absolute top-4 right-4 text-gray-400 text-xl font-bold">✕</button>
             <div class="text-center border-b-2 border-dashed border-pink-200 pb-3 space-y-1.5">
-                <h2 id="artistNameTitle" class="text-lg font-bold text-pink-600">🎨 작가 프로필</h2>
+                <h2 id="artistNameTitle" class="text-lg font-bold text-pink-600">🎨 작가 홈피</h2>
                 <p id="artistRoleBadge" class="text-[10px] bg-pink-50 text-pink-500 border border-pink-200 inline-block px-2.5 py-0.5 rounded-full font-bold"></p>
                 <div>
-                    <button id="artistShareBtn" class="text-[10px] bg-purple-50 text-purple-600 px-3 py-1 rounded-full font-bold border border-purple-100 hover:bg-purple-100">🔗 프로필 링크 복사</button>
+                    <button id="artistShareBtn" class="text-[10px] bg-purple-50 text-purple-600 px-3 py-1 rounded-full font-bold border border-purple-100 hover:bg-purple-100">🔗 홈피 링크 복사</button>
                 </div>
             </div>
             <div class="space-y-2 text-xs">
@@ -499,7 +510,7 @@
                 </div>
             </div>
             <div class="space-y-2 pt-2">
-                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 커미션 타입</h3>
+                <h3 class="text-xs font-bold text-gray-800 flex items-center gap-1">🖼️ 미니 룸에 전시된 타입들</h3>
                 <div id="artistCommissionsList" class="flex flex-col gap-4"></div>
             </div>
         </div>
