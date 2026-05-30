@@ -101,9 +101,7 @@ function shuffleArray(arr) {
     return a;
 }
 
-// =============================================
-// 1. 피드 조회 (정렬 버그 완전 수술 패치 버전)
-// =============================================
+// 1. 피드 조회
 async function fetchCommissions() {
     const listEl = document.getElementById('commissionList');
     if (!listEl) return;
@@ -121,7 +119,6 @@ async function fetchCommissions() {
 
         let filteredData = data || [];
 
-        // 검색 필터
         const searchKeyword = (window.currentSearch || "").trim().toLowerCase();
         if (searchKeyword !== "") {
             filteredData = filteredData.filter(item => {
@@ -132,7 +129,6 @@ async function fetchCommissions() {
             });
         }
 
-        // 태그 필터
         if (window.currentActiveTags.length > 0) {
             filteredData = filteredData.filter(item => {
                 if (!item.tags || !Array.isArray(item.tags)) return false;
@@ -142,16 +138,13 @@ async function fetchCommissions() {
 
         const sortMode = window.currentSortMode || 'random';
 
-        // 🌟 집계 데이터 병렬 스캔 병합 로직
         const ids = filteredData.map(i => i.id);
         if (ids.length > 0) {
-            // 북마크 집계
             const { data: bData } = await getSupabaseClient()
                 .from('bookmarks')
                 .select('commission_id')
                 .in('commission_id', ids);
 
-            // 후기 집계
             const { data: rData } = await getSupabaseClient()
                 .from('reviews')
                 .select('commission_id')
@@ -169,17 +162,13 @@ async function fetchCommissions() {
             }));
         }
 
-        // 🌟 [정렬 엔진 수술] 정렬 결과가 제대로 배열에 적용되도록 구조 교정 및 조건 매핑
         if (sortMode === 'random') {
             filteredData = shuffleArray(filteredData);
         } else if (sortMode === 'reviews') {
-            // 후기 개수가 많은 순 정렬
             filteredData.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
         } else if (sortMode === 'bookmarks') {
-            // 북마크 개수가 많은 순 정렬
             filteredData.sort((a, b) => (b.bookmark_count || 0) - (a.bookmark_count || 0));
         } else if (sortMode === 'popular') {
-            // 🌟 요구사항: 인기순은 오직 클릭수(조회수: view_count)가 가장 높은 순으로 단독 마킹 정렬!
             filteredData.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
         }
 
@@ -283,7 +272,7 @@ async function openArtistProfile(userId) {
     } catch (e) { alert("작가 프로필 로드 실패: " + e.message); }
 }
 
-// 3. 커미션 상세보기
+// 3. 커미션 상세보기 (🌟 이미지 클릭 시 전체 화면 확대 연동 수술 복구)
 async function openDetailModal(id) {
     try {
         const { data: item, error } = await getSupabaseClient()
@@ -293,7 +282,6 @@ async function openDetailModal(id) {
             .maybeSingle();
         if (error || !item) return alert("해당 커미션 글이 존재하지 않거나 삭제되었습니다.");
 
-        // 조회수 증가
         getSupabaseClient()
             .from('commissions')
             .update({ view_count: (item.view_count || 0) + 1 })
@@ -317,7 +305,10 @@ async function openDetailModal(id) {
             ? (item.image_url.includes(',') ? item.image_url.split(',') : [item.image_url])
             : ['https://placehold.co/400x300/fbcfe8/fff?text=No+Image'];
 
-        imgs.forEach(url => { slider.innerHTML += `<img src="${url.trim()}" class="w-full h-full object-cover flex-shrink-0 snap-center">`; });
+        // 🌟 [핵심 변경]: 이미지 태그 생성 시 고유 주소 리스트와 클릭한 인덱스를 가지고 openImageViewer를 호출하게 조치
+        imgs.forEach((url, idx) => { 
+            slider.innerHTML += `<img src="${url.trim()}" class="w-full h-full object-cover flex-shrink-0 snap-center cursor-zoom-in" onclick="openImageViewer(${JSON.stringify(imgs).replace(/"/g, '&quot;')}, ${idx})">`; 
+        });
 
         if (imgs.length > 1) {
             counter.innerText = `1 / ${imgs.length}`;
@@ -331,7 +322,7 @@ async function openDetailModal(id) {
         artistSpan.innerText = `🎨 작가: ${artistName}`;
         artistSpan.onclick = () => { closeModal('detailModal'); openArtistProfile(item.user_id); };
 
-        const slotText = item.slot_type === 'always' ? '상시 커미션' : `슬롯 마감현황 (${item.current_slots || 0}/${item.max_slots || 5})`;
+        const slotText = item.slot_type === 'always' ? '상시 모집' : `슬롯 마감현황 (${item.current_slots || 0}/${item.max_slots || 5})`;
         document.getElementById('detailSlot').innerText = item.is_closed ? '🔒 슬롯 마감' : `🔓 ${slotText}`;
         document.getElementById('detailTitle').innerText = item.title;
         document.getElementById('detailItem').innerText = item.item_wanted || '상세내용 없음';
@@ -358,7 +349,6 @@ async function openDetailModal(id) {
         await updateBookmarkButtonUI(item.id);
         document.getElementById('targetCommissionId').value = item.id;
 
-        // 후기 폼 초기화
         window.editingReviewId = null;
         const reviewContent = document.getElementById('reviewContent');
         const reviewSubmitBtn = document.getElementById('reviewSubmitBtn');
@@ -370,6 +360,100 @@ async function openDetailModal(id) {
         fetchReviews(item.id);
         openModal('detailModal');
     } catch (e) { alert("상세화면을 열지 못했습니다: " + e.message); }
+}
+
+// 🌟 [부활]: 이미지 풀스크린 터치 스냅 스와이프 및 화살표 가동 뷰어 엔진
+function openImageViewer(images, startIdx) {
+    const existing = document.getElementById('imageViewerOverlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'imageViewerOverlay';
+    overlay.style.cssText = `
+        position: fixed; inset: 0; background: rgba(0,0,0,0.96);
+        z-index: 50000 !important; display: flex; flex-direction: column;
+        justify-content: center; align-items: center; overflow: hidden;
+    `;
+
+    overlay.innerHTML = `
+        <button id="viewerCloseBtn"
+            style="position:absolute; top:16px; right:16px; color:white; font-size:24px;
+                   background:rgba(255,255,255,0.2); border:none; cursor:pointer;
+                   z-index:52000; width:40px; height:40px; border-radius:50%;
+                   display:flex; align-items:center; justify-content:center; line-height:1; backdrop-filter:blur(4px);">✕</button>
+        
+        <div style="position:relative; width:100%; display:flex; align-items:center; justify-content:center; max-width:420px;">
+            
+            ${images.length > 1 ? `<button id="viewerPrevBtn" style="position:absolute; left:12px; z-index:52000; color:white; font-size:24px; background:rgba(0,0,0,0.4); border:none; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:3px; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2);">‹</button>` : ''}
+            
+            <div id="viewerSliderContainer" 
+                 style="display:flex; width:100%; height:75vh; overflow-x:auto; scroll-snap-type:x mandatory; scroll-behavior:smooth; -webkit-overflow-scrolling:touch;" 
+                 class="scrollbar-none">
+                ${images.map(url => `
+                    <div style="width:100%; height:100%; flex-shrink:0; scroll-snap-align:center; display:flex; align-items:center; justify-content:center; padding:0 12px;">
+                        <img src="${url.trim()}" style="max-width:100%; max-height:100%; object-fit:contain; border-radius:8px; pointer-events:none;">
+                    </div>
+                `).join('')}
+            </div>
+            
+            ${images.length > 1 ? `<button id="viewerNextBtn" style="position:absolute; right:12px; z-index:52000; color:white; font-size:24px; background:rgba(0,0,0,0.4); border:none; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding-bottom:3px; font-weight:bold; box-shadow:0 2px 8px rgba(0,0,0,0.2);">›</button>` : ''}
+        </div>
+        
+        ${images.length > 1 ? `<p id="viewerIndicator" style="color:rgba(255,255,255,0.6); font-size:13px; font-weight:bold; margin-top:16px; font-family:sans-serif; letter-spacing:1px; z-index:52000;">${startIdx + 1} / ${images.length}</p>` : ''}
+    `;
+
+    document.body.appendChild(overlay);
+
+    const slider = overlay.querySelector('#viewerSliderContainer');
+    const indicator = overlay.querySelector('#viewerIndicator');
+
+    // 지정 좌표로 초기 시작 슬라이더 정렬 이동
+    if (slider) {
+        setTimeout(() => { slider.scrollLeft = slider.clientWidth * startIdx; }, 20);
+
+        // 손가락 밀어서 넘겼을 때 실시간 장수 동기화 카운팅
+        slider.onscroll = () => {
+            if (indicator) {
+                const page = Math.round(slider.scrollLeft / slider.clientWidth) + 1;
+                indicator.innerText = `${page} / ${images.length}`;
+            }
+        };
+    }
+
+    // 회색 버튼 눌러서 앞뒤로 넘기기 클릭 이벤트 장착
+    const prevBtn = overlay.querySelector('#viewerPrevBtn');
+    const nextBtn = overlay.querySelector('#viewerNextBtn');
+
+    if (prevBtn) {
+        prevBtn.onclick = (e) => {
+            e.stopPropagation();
+            const currentPage = Math.round(slider.scrollLeft / slider.clientWidth);
+            if (currentPage > 0) {
+                slider.scrollLeft = slider.clientWidth * (currentPage - 1);
+            } else {
+                slider.scrollLeft = slider.clientWidth * (images.length - 1); // 첫장에서 누르면 마지막 장으로 회전
+            }
+        };
+    }
+
+    if (nextBtn) {
+        nextBtn.onclick = (e) => {
+            e.stopPropagation();
+            const currentPage = Math.round(slider.scrollLeft / slider.clientWidth);
+            if (currentPage < images.length - 1) {
+                slider.scrollLeft = slider.clientWidth * (currentPage + 1);
+            } else {
+                slider.scrollLeft = 0; // 마지막 장에서 누르면 첫 장으로 회전
+            }
+        };
+    }
+
+    const closeBtn = overlay.querySelector('#viewerCloseBtn');
+    if (closeBtn) closeBtn.onclick = () => overlay.remove();
+
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    const escHandler = (e) => { if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', escHandler); } };
+    document.addEventListener('keydown', escHandler);
 }
 
 async function updateBookmarkButtonUI(commissionId) {
@@ -396,10 +480,7 @@ async function fetchBookmarks() {
     if (!bList) return;
     if (!window.currentUserId) { bList.innerHTML = "<p class='text-xs text-gray-400 text-center py-10'>로그인 후 보관함을 이용해주세요! 🔒</p>"; return; }
     try {
-        const { data, error } = await getSupabaseClient()
-            .from('bookmarks')
-            .select(`id, commissions ( id, title, price, image_url, slot_type, is_closed, user_id, profiles ( username ) )`)
-            .eq('user_id', window.currentUserId);
+        const { data, error } = await getSupabaseClient().from('bookmarks').select(`id, commissions ( id, title, price, image_url, slot_type, is_closed, user_id, profiles ( username ) )`).eq('user_id', window.currentUserId);
         if (error) throw error;
         if (!data || data.length === 0) { bList.innerHTML = "<p class='text-xs text-gray-400 text-center py-14'>아직 하트를 누른 커미션 타입이 없습니다. 🤍</p>"; return; }
         bList.innerHTML = data.map(b => {
@@ -425,9 +506,6 @@ async function fetchBookmarks() {
     } catch (e) { bList.innerHTML = "<p class='text-xs text-red-400 text-center py-10'>북마크 로드 에러</p>"; }
 }
 
-// =============================================
-// ✅ 후기 기능 (writer_id 칼럼 완벽 통합 정밀 제어)
-// =============================================
 window.editingReviewId = null;
 
 async function fetchReviews(commissionId) {
@@ -436,7 +514,6 @@ async function fetchReviews(commissionId) {
     container.innerHTML = "<p class='text-[10px] text-gray-400 text-center py-2'>후기를 불러오는 중...</p>";
 
     try {
-        // 🌟 [칼럼 패치 완료] 수파베이스의 실제 명칭인 writer_id를 기준으로 로딩 연산 진행
         const { data: reviews, error } = await getSupabaseClient()
             .from('reviews')
             .select('id, content, rating, created_at, writer_id, is_anonymous, image_url')
@@ -467,7 +544,6 @@ async function fetchReviews(commissionId) {
         container.innerHTML = reviews.map(r => {
             const author = r.is_anonymous ? '익명' : (usernameMap[r.writer_id] || '알 수 없음');
             const stars = "⭐".repeat(Math.min(r.rating || 5, 5));
-            // 🌟 writer_id 칼럼 매핑으로 내 후기 여부 동기화 정상화
             const isReviewMine = window.currentUserId === r.writer_id;
 
             const reviewImg = r.image_url
@@ -561,7 +637,6 @@ async function handleCreateReview(e) {
         if (window.editingReviewId) {
             const updateData = { content, rating };
             if (imageUrl) updateData.image_url = imageUrl;
-            // 🌟 수정한 후기 업데이트 단에서도 writer_id 매핑 교정
             const { error } = await getSupabaseClient()
                 .from('reviews')
                 .update(updateData)
@@ -573,7 +648,7 @@ async function handleCreateReview(e) {
         } else {
             const payload = {
                 commission_id: parseInt(commId),
-                writer_id: window.currentUserId,   // 🌟 writer_id 칼럼 매핑으로 안전하게 안착
+                writer_id: window.currentUserId,
                 content,
                 rating,
                 is_anonymous: isAnonymous
@@ -605,7 +680,6 @@ async function handleCreateReview(e) {
 async function handleDeleteReview(reviewId, commissionId) {
     if (!confirm("작성하신 후기를 정말 삭제하시겠습니까?")) return;
     try {
-        // 🌟 삭제 트랩 파트에서도 writer_id 명칭 완벽 동기화 완료
         const { error } = await getSupabaseClient()
             .from('reviews')
             .delete()
@@ -616,9 +690,6 @@ async function handleDeleteReview(reviewId, commissionId) {
     } catch (e) { alert("후기 삭제 실패: " + e.message); }
 }
 
-// =============================================
-// 커미션 등록/수정/삭제
-// =============================================
 function openRegisterModal() {
     if (!window.currentUserId) return alert("로그인 후 커미션 등록이 가능합니다!");
     if (window.currentUserRole === 'applicant') return alert("⚠️ 신청자 전용 계정은 커미션 글을 등록할 수 없습니다.");
