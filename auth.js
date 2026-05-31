@@ -19,22 +19,24 @@ async function checkUser() {
         if (user) {
             const { data: profile } = await getSupabase()
                 .from('profiles')
-                .select('username, role')
+                .select('username, role, is_admin')
                 .eq('id', user.id)
                 .maybeSingle();
 
             if (profile && profile.username) {
                 loginBtn.innerText = `👤 ${profile.username}`;
-                window.currentUserRole = profile.role || 'commissioner';
-                window.currentUserId = user.id;
-                window.currentUsername = profile.username;
+                window.currentUserRole  = profile.role || 'commissioner';
+                window.currentUserId    = user.id;
+                window.currentUsername  = profile.username;
+                window.currentUserIsAdmin = profile.is_admin || false;  // ← 추가
             }
             loginBtn.onclick = () => openProfileMenu();
         } else {
             loginBtn.innerText = "로그인/가입";
-            window.currentUserRole = null;
-            window.currentUserId = null;
-            window.currentUsername = null;
+            window.currentUserRole    = null;
+            window.currentUserId      = null;
+            window.currentUsername    = null;
+            window.currentUserIsAdmin = false;  // ← 추가
             loginBtn.onclick = () => openModal('authModal');
         }
     } catch (e) {
@@ -232,8 +234,6 @@ async function openMyTypes() {
             const hoursSinceBump = bumpedAt ? (now - bumpedAt) / (1000 * 60 * 60) : 999;
             const canBump = hoursSinceBump >= 48;
 
-            // ✅ 충돌정리: handleBumpCommission은 commission.js에 단일 정의
-            // bumped_at 값을 함께 전달하여 48시간 체크가 대시보드에서도 작동
             const bumpBtn = canBump
                 ? `<button onclick="handleBumpCommission(${item.id}, '${item.bumped_at || ''}')" class="text-[11px] bg-green-50 text-green-600 px-2.5 py-1 rounded-lg font-bold hover:bg-green-100">⬆️ 끌올</button>`
                 : `<button disabled class="text-[11px] bg-gray-100 text-gray-400 px-2.5 py-1 rounded-lg font-bold cursor-not-allowed" title="이틀에 한 번만 끌올 가능합니다">⬆️ 끌올 대기중</button>`;
@@ -263,8 +263,6 @@ async function openMyTypes() {
         }).join('');
     } catch (err) { container.innerHTML = "<p class='text-xs text-red-400 text-center py-4'>목록 로드 실패</p>"; }
 }
-
-// ✅ 충돌정리: auth.js의 handleBumpCommission 제거 — commission.js 단일 버전 사용
 
 async function toggleClosedStatus(id, currentStatus) {
     try {
