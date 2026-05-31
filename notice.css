@@ -1,0 +1,171 @@
+/* ========================================
+   notice.css — 공지 · 문의 · 관리자 스타일
+   ======================================== */
+
+/* ── 헤더 공지 아이콘 버튼 ── */
+.notice-icon-btn {
+    background: linear-gradient(to bottom, #d8fbf9 0%, #a5f3fc 100%);
+    border: 1px solid #06b6d4;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.06);
+    color: #0e7490;
+    border-radius: 9999px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    flex-shrink: 0;
+}
+.notice-icon-btn:hover { opacity: 0.9; }
+.notice-icon-btn:active { transform: scale(0.93); }
+
+/* ── 공지 메뉴 팝업 (📢 눌렀을 때) ── */
+.notice-menu-popup {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: #ffffff;
+    border: 1px solid #f9a8d4;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(219,39,119,0.12);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+    z-index: 20000;
+    animation: noticePopIn 0.15s ease;
+}
+.notice-menu-popup.hidden { display: none !important; }
+
+@keyframes noticePopIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.notice-menu-btn {
+    width: 100%;
+    text-align: left;
+    background: #fdf4ff;
+    border: 1px solid #f3e8ff;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #7c3aed;
+    cursor: pointer;
+    transition: background 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.notice-menu-btn:hover { background: #ede9fe; }
+
+/* ── 이용안내 모달 내부 콘텐츠 ── */
+.notice-card {
+    background: #fdf4ff;
+    border: 1px solid #e9d5ff;
+    border-radius: 14px;
+    overflow: hidden;
+}
+.notice-card-header {
+    background: linear-gradient(to bottom, #e9d5ff 0%, #c084fc 100%);
+    padding: 8px 14px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.notice-content {
+    font-family: 'KoPubWorldDotum', sans-serif;
+    font-weight: 500;
+    font-size: 12px;
+    line-height: 1.8;
+    color: #374151;
+    padding: 14px;
+    background: #ffffff;
+    white-space: pre-wrap;
+    word-break: keep-all;
+}
+
+/* ── 관리자 패널 ── */
+.admin-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #9333ea;
+    letter-spacing: 0.03em;
+    padding-bottom: 4px;
+    border-bottom: 1px dashed #d8b4fe;
+    margin-bottom: 8px;
+}
+.admin-textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 12px;
+    border: 1px solid #d8b4fe;
+    border-radius: 12px;
+    font-family: 'KoPubWorldDotum', sans-serif;
+    font-size: 12px;
+    line-height: 1.7;
+    resize: vertical;
+    background: #fdf4ff;
+    color: #374151;
+    transition: border-color 0.15s;
+}
+.admin-textarea:focus { outline: none; border-color: #a855f7; }
+
+.admin-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d8b4fe;
+    border-radius: 12px;
+    font-family: 'KoPubWorldDotum', sans-serif;
+    font-size: 12px;
+    background: #fdf4ff;
+    color: #374151;
+    transition: border-color 0.15s;
+}
+.admin-input:focus { outline: none; border-color: #a855f7; }
+
+.admin-save-btn {
+    background: linear-gradient(to bottom, #e9d5ff 0%, #a855f7 100%);
+    border: 1px solid #7e22ce;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 10px 0;
+    width: 100%;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+.admin-save-btn:hover { opacity: 0.9; }
+
+/* ── 문의하기 버튼 (카카오 계열) ── */
+.kakao-inquiry-btn {
+    background: linear-gradient(to bottom, #fef9c3 0%, #facc15 100%);
+    border: 1px solid #eab308;
+    text-shadow: 1px 1px 0 rgba(0,0,0,0.10);
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.7), 0 2px 4px rgba(0,0,0,0.06);
+    color: #713f12;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 12px 0;
+    width: 100%;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: opacity 0.15s;
+}
+.kakao-inquiry-btn:hover { opacity: 0.9; }
