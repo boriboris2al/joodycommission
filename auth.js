@@ -46,7 +46,7 @@ async function checkUser() {
 
 // 프로필 메뉴 열기
 function openProfileMenu() {
-    const isCommissioner = window.currentUserRole === 'commissioner' || window.currentUserRole === 'both';
+    const isCommissioner = window.currentUserRole === 'commissioner';
     const menuBtn = document.getElementById('menuMyTypes');
     if (menuBtn) menuBtn.style.display = isCommissioner ? 'block' : 'none';
     openModal('profileMenuModal');
