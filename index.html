@@ -17,6 +17,7 @@
     <meta property="og:type" content="website">
 
     <link rel="icon" type="image/png" href="https://i.imgur.com/O7pudNM.png">
+    <link rel="stylesheet" href="notice.css">
     
     <style>
         @font-face {
@@ -208,7 +209,12 @@
     <div class="phone-container">
         <header class="y2k-header-grid p-4 sticky top-0 flex justify-between items-center border-b-4 border-double border-pink-300">
             <h1 class="text-xl font-bold y2k-main-title cursor-pointer transition-transform duration-100 active:scale-95" onclick="location.reload()">Joody Commission</h1>
-            <button id="loginBtn" class="y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold transition-all">로그인/가입</button>
+            <div class="flex items-center gap-2">
+                <div class="notice-btn-wrapper">
+                    <button onclick="openNoticeMenu()" class="notice-icon-btn" title="공지/문의">📢</button>
+                </div>
+                <button id="loginBtn" class="y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold transition-all">로그인/가입</button>
+            </div>
         </header>
 
         <!-- ✅ 수정3: sectionHome flex-col + overflow-hidden, main에 overflow-y-auto -->
@@ -520,6 +526,65 @@
         </div>
     </div>
 
+    <!-- ── 이용안내 모달 ── -->
+    <div id="noticeModal" class="modal">
+        <div class="bg-white rounded-3xl w-full max-w-sm relative border-4 border-double border-purple-300 shadow-xl flex flex-col" style="max-height:85vh;">
+            <button onclick="closeNoticeModal()" class="absolute top-4 right-4 text-gray-400 text-xl font-bold z-10">✕</button>
+            <div class="p-5 pb-3 border-b border-purple-200 flex-shrink-0">
+                <h2 class="text-lg font-bold text-purple-600">📖 이용안내</h2>
+                <p class="text-[10px] text-purple-400 mt-0.5">Joody Commission 사용 가이드</p>
+            </div>
+            <div class="overflow-y-auto p-4 space-y-3" style="flex:1;">
+                <div class="notice-card">
+                    <div class="notice-card-header">📋 사이트 이용 안내</div>
+                    <p id="noticeContentText" class="notice-content">불러오는 중...</p>
+                </div>
+            </div>
+            <div class="p-4 pt-2 border-t border-purple-100 flex-shrink-0">
+                <button onclick="closeNoticeModal(); openInquiry();" class="kakao-inquiry-btn">
+                    💬 문의하기 (카카오 오픈채팅)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 관리자 설정 모달 ── -->
+    <div id="adminModal" class="modal">
+        <div class="bg-white rounded-3xl w-full max-w-sm relative border-4 border-double border-purple-400 shadow-xl flex flex-col" style="max-height:90vh;">
+            <button onclick="closeAdminModal()" class="absolute top-4 right-4 text-gray-400 text-xl font-bold z-10">✕</button>
+            <div class="p-5 pb-3 border-b border-purple-200 flex-shrink-0">
+                <h2 class="text-lg font-bold text-purple-700">⚙️ 관리자 설정</h2>
+                <p class="text-[10px] text-purple-400 mt-0.5">사이트 공지 및 문의 채널 관리</p>
+            </div>
+            <div class="overflow-y-auto p-4 space-y-5" style="flex:1;">
+                <!-- 이용안내 수정 -->
+                <div>
+                    <p class="admin-section-title">📖 이용안내 내용</p>
+                    <textarea
+                        id="adminNoticeContent"
+                        class="admin-textarea"
+                        placeholder="이용안내 내용을 입력하세요.&#10;&#10;예시:&#10;[사이트 사용법]&#10;...&#10;&#10;[주의사항]&#10;...&#10;&#10;[업데이트 내역]&#10;...">
+                    </textarea>
+                    <p class="text-[10px] text-gray-400 mt-1">줄바꿈 그대로 표시됩니다.</p>
+                </div>
+                <!-- 카카오 링크 수정 -->
+                <div>
+                    <p class="admin-section-title">💬 카카오 오픈채팅 링크</p>
+                    <input
+                        type="text"
+                        id="adminKakaoLink"
+                        class="admin-input"
+                        placeholder="https://open.kakao.com/o/...">
+                </div>
+            </div>
+            <div class="p-4 pt-2 border-t border-purple-100 flex-shrink-0">
+                <button id="adminSaveBtn" onclick="saveAdminSettings()" class="admin-save-btn">
+                    저장하기
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="profileMenuModal" class="modal">
         <div class="bg-white rounded-3xl w-full max-w-sm p-6 relative border-4 border-double border-pink-300 shadow-xl">
             <button onclick="closeModal('profileMenuModal')" class="absolute top-4 right-4 text-gray-400 text-xl font-bold">✕</button>
@@ -576,6 +641,7 @@
     <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
     <script src="commission.js"></script>
+    <script src="notice.js"></script>
 
     <script>
         function openModal(id) { document.getElementById(id).classList.add('active'); }
