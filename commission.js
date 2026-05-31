@@ -77,7 +77,6 @@ function changeFilter(btn, mode) {
     }
 }
 
-// ✅ 수정1: 정렬 버튼 클래스를 y2k-nametag 기반으로 통일 (기존 bg-pink-500 충돌 제거)
 function changeSortMode(mode) {
     window.currentSortMode = mode;
     document.querySelectorAll('.sort-btn').forEach(b => {
@@ -166,7 +165,6 @@ async function fetchCommissions() {
         } else if (sortMode === 'bookmarks') {
             filteredData.sort((a, b) => (b.bookmark_count || 0) - (a.bookmark_count || 0));
         } else if (sortMode === 'popular') {
-            // ✅ 수정1: view_count는 * select에 포함되므로 정상 작동
             filteredData.sort((a, b) => (b.view_count || 0) - (a.view_count || 0));
         } else if (sortMode === 'latest') {
             filteredData.sort((a, b) => {
@@ -239,8 +237,7 @@ async function openArtistProfile(userId) {
 
         document.getElementById('artistNameTitle').innerText = `🎨 ${prof.username} 님의 프로필`;
         let roleStr = "커미션주";
-        if (prof.role === 'applicant') roleStr = "일반 신청자";
-        if (prof.role === 'both') roleStr = "반장/신청자 공용";
+        if (prof.role === 'applicant') roleStr = "신청자";
         document.getElementById('artistRoleBadge').innerText = roleStr;
         document.getElementById('artistContactInfo').innerHTML = renderContactInfo(prof.contact_info);
         document.getElementById('artistResponseTime').innerText = prof.response_time || "지정된 응답 가능 시간이 없습니다.";
@@ -248,7 +245,18 @@ async function openArtistProfile(userId) {
         const shareBtn = document.getElementById('artistShareBtn');
         if (shareBtn) shareBtn.onclick = () => { if (typeof shareProfileLink === 'function') shareProfileLink(userId, prof.username); };
 
+        // 신청자면 타입 목록 섹션 숨기기
         const listContainer = document.getElementById('artistCommissionsList');
+        const listSection = listContainer ? listContainer.closest('.space-y-2') : null;
+
+        if (prof.role === 'applicant') {
+            if (listSection) listSection.style.display = 'none';
+            openModal('artistProfileModal');
+            return;
+        }
+
+        // 커미션주면 타입 목록 표시
+        if (listSection) listSection.style.display = '';
         listContainer.innerHTML = "<p class='text-[11px] text-gray-400 py-2'>등록된 타입을 조회 중입니다...</p>";
         openModal('artistProfileModal');
 
@@ -381,8 +389,6 @@ async function openDetailModal(id) {
     } catch (e) { alert("상세화면을 열지 못했습니다: " + e.message); }
 }
 
-// ✅ 충돌정리: commission.js의 handleBumpCommission 단일 정의 (48시간 체크 포함)
-// auth.js의 동명 함수는 삭제 처리 — 이 함수가 모달/대시보드 양쪽에서 모두 사용됨
 async function handleBumpCommission(id, lastBumpedAt) {
     if (lastBumpedAt) {
         const lastDate = new Date(lastBumpedAt);
