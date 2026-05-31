@@ -87,7 +87,7 @@ async function loadNotice() {
     contentEl.textContent = '불러오는 중...';
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabaseClient
             .from('site_settings')
             .select('setting_value')
             .eq('setting_key', 'notice_content')
@@ -107,7 +107,7 @@ async function loadNotice() {
 // ──────────────────────────────────────────
 async function openInquiry() {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabaseClient
             .from('site_settings')
             .select('setting_value')
             .eq('setting_key', 'kakao_link')
@@ -145,7 +145,7 @@ function closeAdminModal() {
 
 async function loadAdminSettings() {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await getSupabaseClient
             .from('site_settings')
             .select('setting_key, setting_value');
 
@@ -180,13 +180,13 @@ async function saveAdminSettings() {
 
     try {
         // notice_content upsert
-        const { error: e1 } = await supabase
+        const { error: e1 } = await getSupabaseClient
             .from('site_settings')
             .upsert({ setting_key: 'notice_content', setting_value: noticeContent });
         if (e1) throw e1;
 
         // kakao_link upsert
-        const { error: e2 } = await supabase
+        const { error: e2 } = await getSupabaseClient
             .from('site_settings')
             .upsert({ setting_key: 'kakao_link', setting_value: kakaoLink });
         if (e2) throw e2;
