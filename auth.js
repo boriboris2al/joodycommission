@@ -61,7 +61,7 @@ function togglePasswordVisibility(inputId, toggleBtn) {
         toggleBtn.innerText = '🙈';
     } else {
         input.type = 'password';
-        toggleBtn.innerText = '👁️';
+        toggleBtn.innerText = '🐵';
     }
 }
 
