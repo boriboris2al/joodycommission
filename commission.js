@@ -3,6 +3,7 @@ const getSupabaseClient = () => window.supabaseClient;
 window.currentActiveTags = [];
 window.currentSearch = "";
 window.currentSortMode = "random";
+window.currentOpenOnly = false;
 
 function renderContactInfo(contactText) {
     if (!contactText) return `<span class="text-gray-400">등록된 연락망이 없습니다.</span>`;
@@ -89,6 +90,28 @@ function changeSortMode(mode) {
     fetchCommissions();
 }
 
+function toggleOpenOnly() {
+
+    window.currentOpenOnly =
+        !window.currentOpenOnly;
+
+    const btn =
+        document.getElementById('filter-open');
+
+    if (window.currentOpenOnly) {
+
+        btn.className =
+            "sort-btn y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-xs";
+
+    } else {
+
+        btn.className =
+            "sort-btn bg-white text-gray-600 border-2 border-pink-100 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap";
+    }
+
+    fetchCommissions();
+}
+
 function shuffleArray(arr) {
     const a = [...arr];
     for (let i = a.length - 1; i > 0; i--) {
@@ -131,6 +154,22 @@ async function fetchCommissions() {
                 return window.currentActiveTags.every(t => item.tags.includes(t));
             });
         }
+
+        if (window.currentOpenOnly) {
+
+    filteredData =
+        filteredData.filter(item => {
+
+            const isClosed =
+                item.is_closed ||
+                (
+                    item.slot_type === 'limited' &&
+                    item.current_slots >= item.max_slots
+                );
+
+            return !isClosed;
+        });
+}
 
         const sortMode = window.currentSortMode || 'random';
 
