@@ -210,7 +210,7 @@ async function openMyTypes() {
     try {
         const { data, error } = await getSupabase()
             .from('commissions')
-            .select('id, title, price, slot_type, max_slots, current_slots, is_closed, is_private, bumped_at')
+            .select('*')
             .eq('user_id', window.currentUserId)
             .order('created_at', { ascending: false });
         if (error) throw error;
