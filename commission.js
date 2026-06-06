@@ -87,6 +87,12 @@ function changeSortMode(mode) {
     if (activeBtn) {
         activeBtn.className = "sort-btn y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-xs";
     }
+    const openBtn = document.getElementById('filter-open');
+
+    if (openBtn && window.currentOpenOnly) {
+        openBtn.className =
+            "sort-btn y2k-nametag px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap shadow-xs";
+    }
     fetchCommissions();
 }
 
