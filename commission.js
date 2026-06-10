@@ -1,5 +1,68 @@
 const getSupabaseClient = () => window.supabaseClient;
 
+async function compressImage(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const img = new Image();
+        const reader = new FileReader();
+
+        reader.onload = e => {
+
+            img.onload = () => {
+
+                const canvas = document.createElement('canvas');
+
+                const MAX_SIZE = 1200;
+
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob(
+                    blob => {
+
+                        resolve(
+                            new File(
+                                [blob],
+                                file.name.replace(/\.[^/.]+$/, '.jpg'),
+                                {
+                                    type: 'image/jpeg'
+                                }
+                            )
+                        );
+
+                    },
+                    'image/jpeg',
+                    0.8
+                );
+            };
+
+            img.src = e.target.result;
+        };
+
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
 window.currentActiveTags = [];
 window.currentSearch = "";
 window.currentSortMode = "random";
@@ -255,7 +318,7 @@ async function fetchCommissions() {
                 <div class="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex flex-col" onclick="openDetailModal(${item.id})">
                     <div class="relative w-full h-48 bg-gray-50 overflow-hidden">
                         ${closedOverlay}
-                        <img src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
+                        <img loading="lazy" src="${firstImg}" alt="${item.title}" class="w-full h-full object-cover">
                         <span class="absolute bottom-3 right-3 bg-black/60 text-white text-[11px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs">💎 ${item.price} 가치</span>
                     </div>
                     <div class="p-3.5 flex flex-col gap-1.5">
@@ -324,7 +387,7 @@ async function openArtistProfile(userId) {
                     : `<span class="bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded text-[9px] font-bold">모집</span>`;
                 return `
                     <div class="flex items-center gap-3 bg-gray-50/70 p-2 rounded-xl border border-gray-100 cursor-pointer hover:bg-pink-50/20" onclick="closeModal('artistProfileModal'); openDetailModal(${c.id});">
-                        <img src="${img}" class="w-11 h-11 object-cover rounded-lg border border-gray-200">
+                        <img loading="lazy" src="${img}" class="w-11 h-11 object-cover rounded-lg border border-gray-200">
                         <div class="flex-1 min-w-0">
                             <p class="text-xs font-bold text-gray-800 truncate">${c.title}</p>
                             <p class="text-[10px] text-gray-400 mt-0.5">${c.price} 가치</p>
@@ -809,10 +872,19 @@ async function handleCreateCommission(e) {
         let finalImages = [];
         if (fileInput.files && fileInput.files.length > 0) {
             for (let i = 0; i < fileInput.files.length; i++) {
-                const file = fileInput.files[i];
-                const ext = file.name.split('.').pop();
-                const path = `${window.currentUserId}/${Date.now()}_${i}.${ext}`;
-                const { error: upErr } = await getSupabaseClient().storage.from('commission-samples').upload(path, file);
+             const originalFile = fileInput.files[i];
+
+                const file =
+                    await compressImage(originalFile);
+                
+                const path =
+                `${window.currentUserId}/${Date.now()}_${i}.jpg`;
+                
+                const { error: upErr } =
+                await getSupabaseClient()
+                .storage
+                .from('commission-samples')
+                .upload(path, file);
                 if (upErr) throw upErr;
                 const { data: { publicUrl } } = getSupabaseClient().storage.from('commission-samples').getPublicUrl(path);
                 finalImages.push(publicUrl);
